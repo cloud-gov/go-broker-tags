@@ -1,4 +1,4 @@
-module github.com/cloud-gov/sharedBrokerUtils
+module github.com/cloud-gov/shared-broker-utils
 
 go 1.20
 
