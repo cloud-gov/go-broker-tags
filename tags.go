@@ -1,4 +1,4 @@
-package sharedBrokerUtils
+package brokerTags
 
 import (
 	"time"
