@@ -1,4 +1,4 @@
-module github.com/cloud-gov/broker-tags
+module github.com/cloud-gov/go-broker-tags
 
 go 1.20
 
