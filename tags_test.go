@@ -56,6 +56,7 @@ func (m *mockCFClientWrapper) getInstanceName(instanceGUID string) (string, erro
 
 func TestGenerateTags(t *testing.T) {
 	tagManager := &TagManager{
+		broker: "AWS S3 Service Broker",
 		cfClient: &mockCFClientWrapper{
 			serviceOfferingName: "offering-1",
 			servicePlanName:     "plan-1",
@@ -65,7 +66,6 @@ func TestGenerateTags(t *testing.T) {
 		},
 	}
 	tags, err := tagManager.GenerateTags(
-		"AWS S3 Service Broker",
 		"Created",
 		"abc1",
 		"abc2",
@@ -83,8 +83,8 @@ func TestGenerateTags(t *testing.T) {
 	delete(tags, "Created at")
 
 	expectedTags := map[string]string{
-		"Owner":                 "Cloud Foundry",
-		"Created by":            "AWS S3 Service Broker",
+		"client":                "Cloud Foundry",
+		"broker":                "AWS S3 Service Broker",
 		"Service GUID":          "abc1",
 		"Plan GUID":             "abc2",
 		"Organization GUID":     "abc3",
@@ -133,6 +133,7 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 		},
 		"error getting space name": {
 			tagManager: &TagManager{
+				broker: "AWS S3 Service Broker",
 				cfClient: &mockCFClientWrapper{
 					getSpaceErr: errors.New("error getting space name"),
 				},
@@ -141,6 +142,7 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 		},
 		"error getting instance name": {
 			tagManager: &TagManager{
+				broker: "AWS S3 Service Broker",
 				cfClient: &mockCFClientWrapper{
 					getInstanceErr: errors.New("error getting instance name"),
 				},
@@ -152,7 +154,6 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
 			_, err := test.tagManager.GenerateTags(
-				"AWS S3 Service Broker",
 				"Created",
 				"abc1",
 				"abc2",

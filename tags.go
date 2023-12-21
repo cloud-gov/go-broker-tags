@@ -5,6 +5,7 @@ import (
 )
 
 type TagManager struct {
+	broker   string
 	cfClient CFClientWrapper
 }
 
@@ -19,7 +20,6 @@ func NewTagManager() (*TagManager, error) {
 }
 
 func (t *TagManager) GenerateTags(
-	brokerName string,
 	action string,
 	serviceGUID string,
 	servicePlanGUID string,
@@ -29,9 +29,9 @@ func (t *TagManager) GenerateTags(
 ) (map[string]string, error) {
 	tags := make(map[string]string)
 
-	tags["Owner"] = "Cloud Foundry"
+	tags["client"] = "Cloud Foundry"
 
-	tags[action+" by"] = brokerName
+	tags["broker"] = t.broker
 
 	tags[action+" at"] = time.Now().Format(time.RFC822Z)
 
