@@ -84,11 +84,15 @@ func (sp *mockServicePlans) Get(ctx context.Context, guid string) (*resource.Ser
 type mockSpaces struct {
 	getSpaceErr error
 	spaceName   string
+	spaceGuid   string
 }
 
 func (s *mockSpaces) Get(ctx context.Context, guid string) (*resource.Space, error) {
 	if s.getSpaceErr != nil {
 		return nil, s.getSpaceErr
+	}
+	if guid != s.spaceGuid {
+		return nil, fmt.Errorf("guid argument: %s does not match expected guid: %s", guid, s.spaceGuid)
 	}
 	return &resource.Space{
 		Name: s.spaceName,
@@ -134,7 +138,7 @@ func TestGetOrganizationName(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			organizationName, err := test.cfClientWrapper.getOrganizationName(test.organizationGuid)
 			if organizationName != test.expectedOrganizationName {
-				t.Fatalf("expected offering name: %s, got: %s", test.expectedOrganizationName, organizationName)
+				t.Fatalf("expected organization name: %s, got: %s", test.expectedOrganizationName, organizationName)
 			}
 			if err != nil && err.Error() != test.expectedErr.Error() {
 				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
@@ -182,7 +186,7 @@ func TestGetServiceInstanceName(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			offeringName, err := test.cfClientWrapper.getServiceInstanceName(test.serviceInstanceGuid)
 			if offeringName != test.expectedInstanceName {
-				t.Fatalf("expected offering name: %s, got: %s", test.expectedInstanceName, offeringName)
+				t.Fatalf("expected instance name: %s, got: %s", test.expectedInstanceName, offeringName)
 			}
 			if err != nil && err.Error() != test.expectedErr.Error() {
 				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
@@ -278,7 +282,55 @@ func TestGetServicePlanName(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			planName, err := test.cfClientWrapper.getServicePlanName(test.servicePlanGuid)
 			if planName != test.expectedPlanName {
-				t.Fatalf("expected offering name: %s, got: %s", test.expectedPlanName, planName)
+				t.Fatalf("expected plan name: %s, got: %s", test.expectedPlanName, planName)
+			}
+			if err != nil && err.Error() != test.expectedErr.Error() {
+				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
+			}
+		})
+	}
+}
+
+func TestGetSpaceName(t *testing.T) {
+	testCases := map[string]struct {
+		cfClientWrapper   *cfClientWrapper
+		expectedSpaceName string
+		expectedErr       error
+		spaceGuid         string
+	}{
+		"success": {
+			cfClientWrapper: &cfClientWrapper{
+				Organizations:    &mockOrganizations{},
+				ServiceInstances: &mockServiceInstances{},
+				ServiceOfferings: &mockServiceOfferings{},
+				ServicePlans:     &mockServicePlans{},
+				Spaces: &mockSpaces{
+					spaceName: "plan-1",
+					spaceGuid: "guid-1",
+				},
+			},
+			spaceGuid:         "guid-1",
+			expectedSpaceName: "plan-1",
+		},
+		"error": {
+			cfClientWrapper: &cfClientWrapper{
+				Organizations:    &mockOrganizations{},
+				ServiceInstances: &mockServiceInstances{},
+				ServiceOfferings: &mockServiceOfferings{},
+				ServicePlans:     &mockServicePlans{},
+				Spaces: &mockSpaces{
+					getSpaceErr: errors.New("error getting space"),
+				},
+			},
+			expectedErr: errors.New("error getting space"),
+		},
+	}
+
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			spaceName, err := test.cfClientWrapper.getSpaceName(test.spaceGuid)
+			if spaceName != test.expectedSpaceName {
+				t.Fatalf("expected space name: %s, got: %s", test.expectedSpaceName, spaceName)
 			}
 			if err != nil && err.Error() != test.expectedErr.Error() {
 				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
