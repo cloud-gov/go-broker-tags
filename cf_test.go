@@ -12,11 +12,15 @@ import (
 type mockOrganizations struct {
 	getOrganizationErr error
 	organizationName   string
+	organizationGuid   string
 }
 
 func (o *mockOrganizations) Get(ctx context.Context, guid string) (*resource.Organization, error) {
 	if o.getOrganizationErr != nil {
 		return nil, o.getOrganizationErr
+	}
+	if guid != o.organizationGuid {
+		return nil, fmt.Errorf("guid argument: %s does not match expected guid: %s", guid, o.organizationGuid)
 	}
 	return &resource.Organization{
 		Name: o.organizationName,
@@ -89,6 +93,54 @@ func (s *mockSpaces) Get(ctx context.Context, guid string) (*resource.Space, err
 	return &resource.Space{
 		Name: s.spaceName,
 	}, nil
+}
+
+func TestGetOrganizationName(t *testing.T) {
+	testCases := map[string]struct {
+		cfClientWrapper          *cfClientWrapper
+		expectedOrganizationName string
+		expectedErr              error
+		organizationGuid         string
+	}{
+		"success": {
+			cfClientWrapper: &cfClientWrapper{
+				Organizations: &mockOrganizations{
+					organizationName: "org-1",
+					organizationGuid: "guid-1",
+				},
+				ServiceInstances: &mockServiceInstances{},
+				ServiceOfferings: &mockServiceOfferings{},
+				ServicePlans:     &mockServicePlans{},
+				Spaces:           &mockSpaces{},
+			},
+			organizationGuid:         "guid-1",
+			expectedOrganizationName: "org-1",
+		},
+		"error": {
+			cfClientWrapper: &cfClientWrapper{
+				Organizations: &mockOrganizations{},
+				ServiceInstances: &mockServiceInstances{
+					getServiceInstanceErr: errors.New("error getting organization"),
+				},
+				ServiceOfferings: &mockServiceOfferings{},
+				ServicePlans:     &mockServicePlans{},
+				Spaces:           &mockSpaces{},
+			},
+			expectedErr: errors.New("error getting organization"),
+		},
+	}
+
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			organizationName, err := test.cfClientWrapper.getOrganizationName(test.organizationGuid)
+			if organizationName != test.expectedOrganizationName {
+				t.Fatalf("expected offering name: %s, got: %s", test.expectedOrganizationName, organizationName)
+			}
+			if err != nil && err.Error() != test.expectedErr.Error() {
+				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
+			}
+		})
+	}
 }
 
 func TestGetServiceInstanceName(t *testing.T) {
