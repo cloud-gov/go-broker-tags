@@ -62,11 +62,15 @@ func (so *mockServiceOfferings) Get(ctx context.Context, guid string) (*resource
 type mockServicePlans struct {
 	getServicePlanErr error
 	servicePlanName   string
+	servicePlanGuid   string
 }
 
 func (sp *mockServicePlans) Get(ctx context.Context, guid string) (*resource.ServicePlan, error) {
 	if sp.getServicePlanErr != nil {
 		return nil, sp.getServicePlanErr
+	}
+	if guid != sp.servicePlanGuid {
+		return nil, fmt.Errorf("guid argument: %s does not match expected guid: %s", guid, sp.servicePlanGuid)
 	}
 	return &resource.ServicePlan{
 		Name: sp.servicePlanName,
@@ -175,6 +179,54 @@ func TestGetServiceOfferingName(t *testing.T) {
 			offeringName, err := test.cfClientWrapper.getServiceOfferingName(test.serviceOfferingGuid)
 			if offeringName != test.expectedOfferingName {
 				t.Fatalf("expected offering name: %s, got: %s", test.expectedOfferingName, offeringName)
+			}
+			if err != nil && err.Error() != test.expectedErr.Error() {
+				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
+			}
+		})
+	}
+}
+
+func TestGetServicePlanName(t *testing.T) {
+	testCases := map[string]struct {
+		cfClientWrapper  *cfClientWrapper
+		expectedPlanName string
+		expectedErr      error
+		servicePlanGuid  string
+	}{
+		"success": {
+			cfClientWrapper: &cfClientWrapper{
+				Organizations:    &mockOrganizations{},
+				ServiceInstances: &mockServiceInstances{},
+				ServiceOfferings: &mockServiceOfferings{},
+				ServicePlans: &mockServicePlans{
+					servicePlanName: "plan-1",
+					servicePlanGuid: "guid-1",
+				},
+				Spaces: &mockSpaces{},
+			},
+			servicePlanGuid:  "guid-1",
+			expectedPlanName: "plan-1",
+		},
+		"error": {
+			cfClientWrapper: &cfClientWrapper{
+				Organizations:    &mockOrganizations{},
+				ServiceInstances: &mockServiceInstances{},
+				ServiceOfferings: &mockServiceOfferings{},
+				ServicePlans: &mockServicePlans{
+					getServicePlanErr: errors.New("error getting service plan"),
+				},
+				Spaces: &mockSpaces{},
+			},
+			expectedErr: errors.New("error getting service plan"),
+		},
+	}
+
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			planName, err := test.cfClientWrapper.getServicePlanName(test.servicePlanGuid)
+			if planName != test.expectedPlanName {
+				t.Fatalf("expected offering name: %s, got: %s", test.expectedPlanName, planName)
 			}
 			if err != nil && err.Error() != test.expectedErr.Error() {
 				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
