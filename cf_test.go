@@ -48,15 +48,15 @@ func (si *mockServiceInstances) Get(ctx context.Context, guid string) (*resource
 type mockServiceOfferings struct {
 	getServiceOfferingErr error
 	serviceOfferingName   string
-	serviceGuid           string
+	serviceOfferingGuid   string
 }
 
 func (so *mockServiceOfferings) Get(ctx context.Context, guid string) (*resource.ServiceOffering, error) {
 	if so.getServiceOfferingErr != nil {
 		return nil, so.getServiceOfferingErr
 	}
-	if guid != so.serviceGuid {
-		return nil, fmt.Errorf("guid argument: %s does not match expected guid: %s", guid, so.serviceGuid)
+	if guid != so.serviceOfferingGuid {
+		return nil, fmt.Errorf("guid argument: %s does not match expected guid: %s", guid, so.serviceOfferingGuid)
 	}
 	return &resource.ServiceOffering{
 		Name: so.serviceOfferingName,
@@ -208,7 +208,7 @@ func TestGetServiceOfferingName(t *testing.T) {
 				ServiceInstances: &mockServiceInstances{},
 				ServiceOfferings: &mockServiceOfferings{
 					serviceOfferingName: "offering-1",
-					serviceGuid:         "guid-1",
+					serviceOfferingGuid: "guid-1",
 				},
 				ServicePlans: &mockServicePlans{},
 				Spaces:       &mockSpaces{},
