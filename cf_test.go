@@ -23,6 +23,24 @@ func (o *mockOrganizations) Get(ctx context.Context, guid string) (*resource.Org
 	}, nil
 }
 
+type mockServiceInstances struct {
+	getServiceInstanceErr error
+	serviceInstanceName   string
+	serviceInstanceGuid   string
+}
+
+func (si *mockServiceInstances) Get(ctx context.Context, guid string) (*resource.ServiceInstance, error) {
+	if si.getServiceInstanceErr != nil {
+		return nil, si.getServiceInstanceErr
+	}
+	if guid != si.serviceInstanceGuid {
+		return nil, fmt.Errorf("guid argument: %s does not match expected guid: %s", guid, si.serviceInstanceGuid)
+	}
+	return &resource.ServiceInstance{
+		Name: si.serviceInstanceName,
+	}, nil
+}
+
 type mockServiceOfferings struct {
 	getServiceOfferingErr error
 	serviceOfferingName   string
@@ -55,20 +73,6 @@ func (sp *mockServicePlans) Get(ctx context.Context, guid string) (*resource.Ser
 	}, nil
 }
 
-type mockServiceInstances struct {
-	getServicePlanErr error
-	servicePlanName   string
-}
-
-func (si *mockServiceInstances) Get(ctx context.Context, guid string) (*resource.ServiceInstance, error) {
-	if si.getServicePlanErr != nil {
-		return nil, si.getServicePlanErr
-	}
-	return &resource.ServiceInstance{
-		Name: si.servicePlanName,
-	}, nil
-}
-
 type mockSpaces struct {
 	getSpaceErr error
 	spaceName   string
@@ -81,6 +85,54 @@ func (s *mockSpaces) Get(ctx context.Context, guid string) (*resource.Space, err
 	return &resource.Space{
 		Name: s.spaceName,
 	}, nil
+}
+
+func TestGetServiceInstanceName(t *testing.T) {
+	testCases := map[string]struct {
+		cfClientWrapper      *cfClientWrapper
+		expectedInstanceName string
+		expectedErr          error
+		serviceInstanceGuid  string
+	}{
+		"success": {
+			cfClientWrapper: &cfClientWrapper{
+				Organizations: &mockOrganizations{},
+				ServiceInstances: &mockServiceInstances{
+					serviceInstanceName: "instance-1",
+					serviceInstanceGuid: "guid-1",
+				},
+				ServiceOfferings: &mockServiceOfferings{},
+				ServicePlans:     &mockServicePlans{},
+				Spaces:           &mockSpaces{},
+			},
+			serviceInstanceGuid:  "guid-1",
+			expectedInstanceName: "instance-1",
+		},
+		"error": {
+			cfClientWrapper: &cfClientWrapper{
+				Organizations: &mockOrganizations{},
+				ServiceInstances: &mockServiceInstances{
+					getServiceInstanceErr: errors.New("error getting service instance"),
+				},
+				ServiceOfferings: &mockServiceOfferings{},
+				ServicePlans:     &mockServicePlans{},
+				Spaces:           &mockSpaces{},
+			},
+			expectedErr: errors.New("error getting service instance"),
+		},
+	}
+
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			offeringName, err := test.cfClientWrapper.getServiceInstanceName(test.serviceInstanceGuid)
+			if offeringName != test.expectedInstanceName {
+				t.Fatalf("expected offering name: %s, got: %s", test.expectedInstanceName, offeringName)
+			}
+			if err != nil && err.Error() != test.expectedErr.Error() {
+				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
+			}
+		})
+	}
 }
 
 func TestGetServiceOfferingName(t *testing.T) {

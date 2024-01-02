@@ -47,7 +47,7 @@ func (m *mockCFClientWrapper) getSpaceName(spaceGUID string) (string, error) {
 	return m.spaceName, nil
 }
 
-func (m *mockCFClientWrapper) getInstanceName(instanceGUID string) (string, error) {
+func (m *mockCFClientWrapper) getServiceInstanceName(instanceGUID string) (string, error) {
 	if m.getInstanceErr != nil {
 		return "", m.getInstanceErr
 	}

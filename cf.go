@@ -10,11 +10,11 @@ import (
 )
 
 type CFClientWrapper interface {
+	getOrganizationName(organizationGUID string) (string, error)
+	getServiceInstanceName(instanceGUID string) (string, error)
 	getServiceOfferingName(serviceGUID string) (string, error)
 	getServicePlanName(servicePlanGUID string) (string, error)
-	getOrganizationName(organizationGUID string) (string, error)
 	getSpaceName(spaceGUID string) (string, error)
-	getInstanceName(instanceGUID string) (string, error)
 }
 
 type OrganizationsInterface interface {
@@ -67,6 +67,14 @@ func NewCFClientWrapper() (*cfClientWrapper, error) {
 	}, nil
 }
 
+func (c *cfClientWrapper) getServiceInstanceName(instanceGUID string) (string, error) {
+	instance, err := c.ServiceInstances.Get(context.Background(), instanceGUID)
+	if err != nil {
+		return "", err
+	}
+	return instance.Name, nil
+}
+
 func (c *cfClientWrapper) getServiceOfferingName(serviceGUID string) (string, error) {
 	service, err := c.ServiceOfferings.Get(context.Background(), serviceGUID)
 	if err != nil {
@@ -97,12 +105,4 @@ func (c *cfClientWrapper) getSpaceName(spaceGUID string) (string, error) {
 		return "", err
 	}
 	return space.Name, nil
-}
-
-func (c *cfClientWrapper) getInstanceName(instanceGUID string) (string, error) {
-	instance, err := c.ServiceInstances.Get(context.Background(), instanceGUID)
-	if err != nil {
-		return "", err
-	}
-	return instance.Name, nil
 }

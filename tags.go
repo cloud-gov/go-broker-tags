@@ -78,7 +78,7 @@ func (t *TagManager) GenerateTags(
 	if instanceGUID != "" {
 		tags["Instance GUID"] = instanceGUID
 
-		instanceName, err := t.cfClientWrapper.getInstanceName(instanceGUID)
+		instanceName, err := t.cfClientWrapper.getServiceInstanceName(instanceGUID)
 		if err != nil {
 			return nil, err
 		}
