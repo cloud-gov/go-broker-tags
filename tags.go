@@ -5,17 +5,17 @@ import (
 )
 
 type TagManager struct {
-	broker   string
-	cfClient CFClientWrapper
+	broker          string
+	cfClientWrapper CFClientWrapper
 }
 
 func NewTagManager() (*TagManager, error) {
-	cfClient, err := NewCFClient()
+	cfClientWrapper, err := NewCFClientWrapper()
 	if err != nil {
 		return nil, err
 	}
 	return &TagManager{
-		cfClient: cfClient,
+		cfClientWrapper: cfClientWrapper,
 	}, nil
 }
 
@@ -38,7 +38,7 @@ func (t *TagManager) GenerateTags(
 	if serviceGUID != "" {
 		tags["Service GUID"] = serviceGUID
 
-		serviceOfferingName, err := t.cfClient.getServiceOfferingName(serviceGUID)
+		serviceOfferingName, err := t.cfClientWrapper.getServiceOfferingName(serviceGUID)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +48,7 @@ func (t *TagManager) GenerateTags(
 	if servicePlanGUID != "" {
 		tags["Plan GUID"] = servicePlanGUID
 
-		servicePlanName, err := t.cfClient.getServicePlanName(servicePlanGUID)
+		servicePlanName, err := t.cfClientWrapper.getServicePlanName(servicePlanGUID)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func (t *TagManager) GenerateTags(
 	if organizationGUID != "" {
 		tags["Organization GUID"] = organizationGUID
 
-		organizationName, err := t.cfClient.getOrganizationName(organizationGUID)
+		organizationName, err := t.cfClientWrapper.getOrganizationName(organizationGUID)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +68,7 @@ func (t *TagManager) GenerateTags(
 	if spaceGUID != "" {
 		tags["Space GUID"] = spaceGUID
 
-		spaceName, err := t.cfClient.getSpaceName(organizationGUID)
+		spaceName, err := t.cfClientWrapper.getSpaceName(organizationGUID)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func (t *TagManager) GenerateTags(
 	if instanceGUID != "" {
 		tags["Instance GUID"] = instanceGUID
 
-		instanceName, err := t.cfClient.getInstanceName(instanceGUID)
+		instanceName, err := t.cfClientWrapper.getInstanceName(instanceGUID)
 		if err != nil {
 			return nil, err
 		}

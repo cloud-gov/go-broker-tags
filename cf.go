@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudfoundry-community/go-cfclient/v3/client"
 	"github.com/cloudfoundry-community/go-cfclient/v3/config"
+	"github.com/cloudfoundry-community/go-cfclient/v3/resource"
 )
 
 type CFClientWrapper interface {
@@ -16,11 +17,35 @@ type CFClientWrapper interface {
 	getInstanceName(instanceGUID string) (string, error)
 }
 
-type cfClientWrapper struct {
-	cf *client.Client
+type OrganizationsInterface interface {
+	Get(ctx context.Context, guid string) (*resource.Organization, error)
 }
 
-func NewCFClient() (*cfClientWrapper, error) {
+type ServiceInstancesInterface interface {
+	Get(ctx context.Context, guid string) (*resource.ServiceInstance, error)
+}
+
+type ServiceOfferingsInterface interface {
+	Get(ctx context.Context, guid string) (*resource.ServiceOffering, error)
+}
+
+type ServicePlansInterface interface {
+	Get(ctx context.Context, guid string) (*resource.ServicePlan, error)
+}
+
+type SpacesInterface interface {
+	Get(ctx context.Context, guid string) (*resource.Space, error)
+}
+
+type cfClientWrapper struct {
+	Organizations    OrganizationsInterface
+	ServiceInstances ServiceInstancesInterface
+	ServiceOfferings ServiceOfferingsInterface
+	ServicePlans     ServicePlansInterface
+	Spaces           SpacesInterface
+}
+
+func NewCFClientWrapper() (*cfClientWrapper, error) {
 	cfg, err := config.NewClientSecret(
 		os.Getenv("CF_API_URL"),
 		os.Getenv("CF_API_CLIENT_ID"),
@@ -34,12 +59,16 @@ func NewCFClient() (*cfClientWrapper, error) {
 		return nil, err
 	}
 	return &cfClientWrapper{
-		cf: cf,
+		Organizations:    cf.Organizations,
+		ServiceInstances: cf.ServiceInstances,
+		ServiceOfferings: cf.ServiceOfferings,
+		ServicePlans:     cf.ServicePlans,
+		Spaces:           cf.Spaces,
 	}, nil
 }
 
 func (c *cfClientWrapper) getServiceOfferingName(serviceGUID string) (string, error) {
-	service, err := c.cf.ServiceOfferings.Get(context.Background(), serviceGUID)
+	service, err := c.ServiceOfferings.Get(context.Background(), serviceGUID)
 	if err != nil {
 		return "", err
 	}
@@ -47,7 +76,7 @@ func (c *cfClientWrapper) getServiceOfferingName(serviceGUID string) (string, er
 }
 
 func (c *cfClientWrapper) getServicePlanName(servicePlanGUID string) (string, error) {
-	servicePlan, err := c.cf.ServicePlans.Get(context.Background(), servicePlanGUID)
+	servicePlan, err := c.ServicePlans.Get(context.Background(), servicePlanGUID)
 	if err != nil {
 		return "", err
 	}
@@ -55,7 +84,7 @@ func (c *cfClientWrapper) getServicePlanName(servicePlanGUID string) (string, er
 }
 
 func (c *cfClientWrapper) getOrganizationName(organizationGUID string) (string, error) {
-	organization, err := c.cf.Organizations.Get(context.Background(), organizationGUID)
+	organization, err := c.Organizations.Get(context.Background(), organizationGUID)
 	if err != nil {
 		return "", err
 	}
@@ -63,7 +92,7 @@ func (c *cfClientWrapper) getOrganizationName(organizationGUID string) (string, 
 }
 
 func (c *cfClientWrapper) getSpaceName(spaceGUID string) (string, error) {
-	space, err := c.cf.Spaces.Get(context.Background(), spaceGUID)
+	space, err := c.Spaces.Get(context.Background(), spaceGUID)
 	if err != nil {
 		return "", err
 	}
@@ -71,7 +100,7 @@ func (c *cfClientWrapper) getSpaceName(spaceGUID string) (string, error) {
 }
 
 func (c *cfClientWrapper) getInstanceName(instanceGUID string) (string, error) {
-	instance, err := c.cf.ServiceInstances.Get(context.Background(), instanceGUID)
+	instance, err := c.ServiceInstances.Get(context.Background(), instanceGUID)
 	if err != nil {
 		return "", err
 	}
