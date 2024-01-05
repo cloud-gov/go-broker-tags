@@ -4,8 +4,8 @@ package brokerTags
 type Action int
 
 const (
-	CreatedAtTagKey = "Created at"
-	UpdatedAtTagKey = "Updated at"
+	createdAtTagKey = "Created at"
+	updatedAtTagKey = "Updated at"
 )
 
 const (
@@ -18,5 +18,5 @@ func (a Action) String() string {
 }
 
 func (a Action) getTagKey() string {
-	return [...]string{CreatedAtTagKey, UpdatedAtTagKey}[a]
+	return [...]string{createdAtTagKey, updatedAtTagKey}[a]
 }
