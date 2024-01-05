@@ -13,10 +13,6 @@ const (
 	Update               // EnumIndex = 1
 )
 
-func (a Action) String() string {
-	return [...]string{"Created", "Updated"}[a]
-}
-
 func (a Action) getTagKey() string {
 	return [...]string{createdAtTagKey, updatedAtTagKey}[a]
 }
