@@ -142,20 +142,17 @@ func TestGenerateTags(t *testing.T) {
 				test.spaceGUID,
 				test.instanceGUID,
 			)
+
 			if err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
-			if test.action == Create {
-				if tags[CreatedAtTagKey] == "" {
-					t.Fatalf("Expected a value for %s tag", CreatedAtTagKey)
-				}
-				delete(tags, CreatedAtTagKey)
-			} else if test.action == Update {
-				if tags[UpdatedAtTagKey] == "" {
-					t.Fatalf("Expected a value for %s tag", UpdatedAtTagKey)
-				}
-				delete(tags, UpdatedAtTagKey)
+
+			actionTagKey := test.action.getTagKey()
+			if tags[actionTagKey] == "" {
+				t.Fatalf("Expected a value for %s tag", actionTagKey)
 			}
+			delete(tags, actionTagKey)
+
 			if !cmp.Equal(tags, test.expectedTags) {
 				t.Errorf(cmp.Diff(tags, test.expectedTags))
 			}

@@ -21,18 +21,6 @@ const (
 	UpdatedAtTagKey           = "Updated at"
 )
 
-// Action - Custom type to hold value for broker action
-type Action int
-
-const (
-	Create Action = iota // EnumIndex = 0
-	Update               // EnumIndex = 1
-)
-
-func (a Action) String() string {
-	return [...]string{"Created", "Updated"}[a]
-}
-
 type TagManager struct {
 	broker         string
 	cfNameResolver NameResolver
@@ -62,11 +50,7 @@ func (t *TagManager) GenerateTags(
 
 	tags[BrokerTagKey] = t.broker
 
-	if action == Create {
-		tags[CreatedAtTagKey] = time.Now().Format(time.RFC822Z)
-	} else if action == Update {
-		tags[UpdatedAtTagKey] = time.Now().Format(time.RFC822Z)
-	}
+	tags[action.getTagKey()] = time.Now().Format(time.RFC822Z)
 
 	if serviceGUID != "" {
 		tags[ServiceOfferingGUIDTagKey] = serviceGUID
