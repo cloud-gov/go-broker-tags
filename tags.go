@@ -20,7 +20,7 @@ func NewTagManager() (*TagManager, error) {
 }
 
 func (t *TagManager) GenerateTags(
-	action string,
+	action string, // The action that about to occur for the tagged resource, e.g. "created", "updated"
 	serviceGUID string,
 	servicePlanGUID string,
 	organizationGUID string,
