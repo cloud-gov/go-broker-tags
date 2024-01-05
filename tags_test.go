@@ -67,7 +67,7 @@ func TestGenerateTags(t *testing.T) {
 		},
 	}
 	tags, err := tagManager.GenerateTags(
-		"Created",
+		Create,
 		"abc1",
 		"abc2",
 		"abc3",
@@ -78,10 +78,10 @@ func TestGenerateTags(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if tags["Created at"] == "" {
-		t.Fatal("Expected a value for \"Created at\" tag")
+	if tags[CreatedAtTagKey] == "" {
+		t.Fatalf("Expected a value for %s tag", CreatedAtTagKey)
 	}
-	delete(tags, "Created at")
+	delete(tags, CreatedAtTagKey)
 
 	expectedTags := map[string]string{
 		"client":                "Cloud Foundry",
@@ -155,7 +155,7 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
 			_, err := test.tagManager.GenerateTags(
-				"Created",
+				Create,
 				"abc1",
 				"abc2",
 				"abc3",

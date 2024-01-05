@@ -7,6 +7,7 @@ import (
 const (
 	BrokerTagKey              = "broker"
 	ClientTagKey              = "client"
+	CreatedAtTagKey           = "Created at"
 	OrganizationGUIDTagKey    = "Organization GUID"
 	OrganizationNameTagKey    = "Organization name"
 	ServiceInstanceGUIDTagKey = "Instance GUID"
@@ -17,25 +18,38 @@ const (
 	ServicePlanNameTagKey     = "Service plan name"
 	SpaceGUIDTagKey           = "Space GUID"
 	SpaceNameTagKey           = "Space name"
+	UpdatedAtTagKey           = "Updated at"
 )
 
+// Action - Custom type to hold value for broker action
+type Action int
+
+const (
+	Create Action = iota // EnumIndex = 0
+	Update               // EnumIndex = 1
+)
+
+func (a Action) String() string {
+	return [...]string{"Created", "Updated"}[a]
+}
+
 type TagManager struct {
-	broker          string
-	cfClientWrapper CFClientWrapper
+	broker         string
+	cfNameResolver NameResolver
 }
 
 func NewTagManager() (*TagManager, error) {
-	cfClientWrapper, err := NewCFClientWrapper()
+	cfNameResolver, err := newCFNameResolver()
 	if err != nil {
 		return nil, err
 	}
 	return &TagManager{
-		cfClientWrapper: cfClientWrapper,
+		cfNameResolver: cfNameResolver,
 	}, nil
 }
 
 func (t *TagManager) GenerateTags(
-	action string, // The action that about to occur for the tagged resource, e.g. "created", "updated"
+	action Action,
 	serviceGUID string,
 	servicePlanGUID string,
 	organizationGUID string,
@@ -48,12 +62,16 @@ func (t *TagManager) GenerateTags(
 
 	tags[BrokerTagKey] = t.broker
 
-	tags[action+" at"] = time.Now().Format(time.RFC822Z)
+	if action == Create {
+		tags[CreatedAtTagKey] = time.Now().Format(time.RFC822Z)
+	} else if action == Update {
+		tags[UpdatedAtTagKey] = time.Now().Format(time.RFC822Z)
+	}
 
 	if serviceGUID != "" {
 		tags[ServiceOfferingGUIDTagKey] = serviceGUID
 
-		serviceOfferingName, err := t.cfClientWrapper.getServiceOfferingName(serviceGUID)
+		serviceOfferingName, err := t.cfNameResolver.getServiceOfferingName(serviceGUID)
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +81,7 @@ func (t *TagManager) GenerateTags(
 	if servicePlanGUID != "" {
 		tags[ServicePlanGUIDTagKey] = servicePlanGUID
 
-		servicePlanName, err := t.cfClientWrapper.getServicePlanName(servicePlanGUID)
+		servicePlanName, err := t.cfNameResolver.getServicePlanName(servicePlanGUID)
 		if err != nil {
 			return nil, err
 		}
