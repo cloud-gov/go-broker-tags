@@ -104,27 +104,26 @@ func (s *mockSpaces) Get(ctx context.Context, guid string) (*resource.Space, err
 func TestGetRequiredEnvVars(t *testing.T) {
 	testCases := map[string]struct {
 		envVars              map[string]string
-		expectErr            bool
+		expectedErr          string
 		expectedEnvVarValues map[string]string
 	}{
 		"no env vars": {
-			expectErr: true,
+			expectedErr: fmt.Sprintf("%s environment variable is required", cfApiUrlEnvVar),
 		},
 		"one env var set": {
-			expectErr: true,
+			expectedErr: fmt.Sprintf("%s environment variable is required", cfApiClientIdEnvVar),
 			envVars: map[string]string{
 				(cfApiUrlEnvVar): "api-1",
 			},
 		},
 		"two env vars set": {
-			expectErr: true,
+			expectedErr: fmt.Sprintf("%s environment variable is required", cfApiClientSecretEnvVar),
 			envVars: map[string]string{
 				(cfApiUrlEnvVar):      "api-1",
 				(cfApiClientIdEnvVar): "client-1",
 			},
 		},
 		"all env vars set": {
-			expectErr: false,
 			envVars: map[string]string{
 				(cfApiUrlEnvVar):          "api-1",
 				(cfApiClientIdEnvVar):     "client-1",
@@ -144,11 +143,8 @@ func TestGetRequiredEnvVars(t *testing.T) {
 			}
 
 			values, err := getRequiredEnvVars()
-			if !test.expectErr && err != nil {
-				t.Fatalf("unexpected error: %s", err)
-			}
-			if test.expectErr && err == nil {
-				t.Fatalf("expected error, got nil")
+			if err != nil && test.expectedErr != err.Error() {
+				t.Fatalf("expected error: %s, got %s", test.expectedErr, err.Error())
 			}
 
 			if !cmp.Equal(values, test.expectedEnvVarValues) {
@@ -157,6 +153,27 @@ func TestGetRequiredEnvVars(t *testing.T) {
 
 			for envVar := range test.envVars {
 				os.Unsetenv(envVar)
+			}
+		})
+	}
+}
+
+func TestNewCFNameResolver(t *testing.T) {
+	testCases := map[string]struct {
+		envVars   map[string]string
+		expectErr bool
+	}{
+		"no env vars": {
+			expectErr: true,
+		},
+	}
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			_, err := newCFNameResolver()
+			if err != nil && !test.expectErr {
+				t.Fatal("unexpected error")
+			} else if err == nil && test.expectErr {
+				t.Fatal("expected error, got nil")
 			}
 		})
 	}
