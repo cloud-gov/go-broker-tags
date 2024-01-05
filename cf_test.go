@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/cloudfoundry-community/go-cfclient/v3/resource"
@@ -97,6 +98,57 @@ func (s *mockSpaces) Get(ctx context.Context, guid string) (*resource.Space, err
 	return &resource.Space{
 		Name: s.spaceName,
 	}, nil
+}
+
+func TestGetRequiredEnvVars(t *testing.T) {
+	testCases := map[string]struct {
+		envVars   map[string]string
+		expectErr bool
+	}{
+		"no env vars": {
+			expectErr: true,
+		},
+		"one env var set": {
+			expectErr: true,
+			envVars: map[string]string{
+				"CF_API_URL": "api-1",
+			},
+		},
+		"two env vars set": {
+			expectErr: true,
+			envVars: map[string]string{
+				"CF_API_URL":       "api-1",
+				"CF_API_CLIENT_ID": "client-1",
+			},
+		},
+		"all env vars set": {
+			expectErr: false,
+			envVars: map[string]string{
+				"CF_API_URL":           "api-1",
+				"CF_API_CLIENT_ID":     "client-1",
+				"CF_API_CLIENT_SECRET": "secret",
+			},
+		},
+	}
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			for envVar, value := range test.envVars {
+				os.Setenv(envVar, value)
+			}
+
+			_, err := getRequiredEnvVars()
+			if !test.expectErr && err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			if test.expectErr && err == nil {
+				t.Fatalf("expected error, got nil")
+			}
+
+			for envVar := range test.envVars {
+				os.Unsetenv(envVar)
+			}
+		})
+	}
 }
 
 func TestGetOrganizationName(t *testing.T) {

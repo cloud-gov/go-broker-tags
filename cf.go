@@ -2,6 +2,7 @@ package brokerTags
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/cloudfoundry-community/go-cfclient/v3/client"
@@ -45,11 +46,38 @@ type cfNameResolver struct {
 	Spaces           SpaceGetter
 }
 
+const (
+	cfApiUrlEnvVar          = "CF_API_URL"
+	cfApiClientIdEnvVar     = "CF_API_CLIENT_ID"
+	cfApiClientSecretEnvVar = "CF_API_CLIENT_SECRET"
+)
+
+func getRequiredEnvVars() (map[string]string, error) {
+	requiredEnvVars := []string{
+		cfApiUrlEnvVar,
+		cfApiClientIdEnvVar,
+		cfApiClientSecretEnvVar,
+	}
+	envVarValues := make(map[string]string)
+	for _, envVarName := range requiredEnvVars {
+		value, exists := os.LookupEnv(envVarName)
+		if !exists {
+			return nil, fmt.Errorf("%s environment variable is required", envVarName)
+		}
+		envVarValues[envVarName] = value
+	}
+	return envVarValues, nil
+}
+
 func newCFNameResolver() (*cfNameResolver, error) {
+	envVars, err := getRequiredEnvVars()
+	if err != nil {
+		return nil, err
+	}
 	cfg, err := config.NewClientSecret(
-		os.Getenv("CF_API_URL"),
-		os.Getenv("CF_API_CLIENT_ID"),
-		os.Getenv("CF_API_CLIENT_SECRET"),
+		envVars[cfApiUrlEnvVar],
+		envVars[cfApiClientIdEnvVar],
+		envVars[cfApiClientSecretEnvVar],
 	)
 	if err != nil {
 		return nil, err
