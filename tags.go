@@ -24,7 +24,7 @@ type TagManager struct {
 	cfNameResolver NameResolver
 }
 
-func NewTagManager() (*TagManager, error) {
+func NewManager() (*TagManager, error) {
 	cfNameResolver, err := newCFNameResolver()
 	if err != nil {
 		return nil, err
