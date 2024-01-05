@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/cloudfoundry-community/go-cfclient/v3/resource"
+	"github.com/google/go-cmp/cmp"
 )
 
 type mockOrganizations struct {
@@ -102,8 +103,9 @@ func (s *mockSpaces) Get(ctx context.Context, guid string) (*resource.Space, err
 
 func TestGetRequiredEnvVars(t *testing.T) {
 	testCases := map[string]struct {
-		envVars   map[string]string
-		expectErr bool
+		envVars              map[string]string
+		expectErr            bool
+		expectedEnvVarValues map[string]string
 	}{
 		"no env vars": {
 			expectErr: true,
@@ -111,22 +113,27 @@ func TestGetRequiredEnvVars(t *testing.T) {
 		"one env var set": {
 			expectErr: true,
 			envVars: map[string]string{
-				"CF_API_URL": "api-1",
+				(cfApiUrlEnvVar): "api-1",
 			},
 		},
 		"two env vars set": {
 			expectErr: true,
 			envVars: map[string]string{
-				"CF_API_URL":       "api-1",
-				"CF_API_CLIENT_ID": "client-1",
+				(cfApiUrlEnvVar):      "api-1",
+				(cfApiClientIdEnvVar): "client-1",
 			},
 		},
 		"all env vars set": {
 			expectErr: false,
 			envVars: map[string]string{
-				"CF_API_URL":           "api-1",
-				"CF_API_CLIENT_ID":     "client-1",
-				"CF_API_CLIENT_SECRET": "secret",
+				(cfApiUrlEnvVar):          "api-1",
+				(cfApiClientIdEnvVar):     "client-1",
+				(cfApiClientSecretEnvVar): "secret",
+			},
+			expectedEnvVarValues: map[string]string{
+				(cfApiUrlEnvVar):          "api-1",
+				(cfApiClientIdEnvVar):     "client-1",
+				(cfApiClientSecretEnvVar): "secret",
 			},
 		},
 	}
@@ -136,12 +143,16 @@ func TestGetRequiredEnvVars(t *testing.T) {
 				os.Setenv(envVar, value)
 			}
 
-			_, err := getRequiredEnvVars()
+			values, err := getRequiredEnvVars()
 			if !test.expectErr && err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
 			if test.expectErr && err == nil {
 				t.Fatalf("expected error, got nil")
+			}
+
+			if !cmp.Equal(values, test.expectedEnvVarValues) {
+				t.Errorf(cmp.Diff(values, test.expectedEnvVarValues))
 			}
 
 			for envVar := range test.envVars {
