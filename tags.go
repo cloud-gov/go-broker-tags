@@ -73,7 +73,7 @@ func (t *TagManager) GenerateTags(
 	if organizationGUID != "" {
 		tags[OrganizationGUIDTagKey] = organizationGUID
 
-		organizationName, err := t.cfClientWrapper.getOrganizationName(organizationGUID)
+		organizationName, err := t.cfNameResolver.getOrganizationName(organizationGUID)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func (t *TagManager) GenerateTags(
 	if spaceGUID != "" {
 		tags[SpaceGUIDTagKey] = spaceGUID
 
-		spaceName, err := t.cfClientWrapper.getSpaceName(organizationGUID)
+		spaceName, err := t.cfNameResolver.getSpaceName(organizationGUID)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +93,7 @@ func (t *TagManager) GenerateTags(
 	if instanceGUID != "" {
 		tags[ServiceInstanceGUIDTagKey] = instanceGUID
 
-		instanceName, err := t.cfClientWrapper.getServiceInstanceName(instanceGUID)
+		instanceName, err := t.cfNameResolver.getServiceInstanceName(instanceGUID)
 		if err != nil {
 			return nil, err
 		}
