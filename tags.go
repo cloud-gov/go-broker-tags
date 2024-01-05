@@ -7,7 +7,6 @@ import (
 const (
 	BrokerTagKey              = "broker"
 	ClientTagKey              = "client"
-	CreatedAtTagKey           = "Created at"
 	OrganizationGUIDTagKey    = "Organization GUID"
 	OrganizationNameTagKey    = "Organization name"
 	ServiceInstanceGUIDTagKey = "Instance GUID"
@@ -18,7 +17,6 @@ const (
 	ServicePlanNameTagKey     = "Service plan name"
 	SpaceGUIDTagKey           = "Space GUID"
 	SpaceNameTagKey           = "Space name"
-	UpdatedAtTagKey           = "Updated at"
 )
 
 type TagManager struct {

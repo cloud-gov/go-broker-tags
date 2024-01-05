@@ -4,6 +4,11 @@ package brokerTags
 type Action int
 
 const (
+	CreatedAtTagKey = "Created at"
+	UpdatedAtTagKey = "Updated at"
+)
+
+const (
 	Create Action = iota // EnumIndex = 0
 	Update               // EnumIndex = 1
 )
