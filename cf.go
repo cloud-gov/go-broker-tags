@@ -17,32 +17,32 @@ type CFClientWrapper interface {
 	getSpaceName(spaceGUID string) (string, error)
 }
 
-type OrganizationsInterface interface {
+type OrganizationGetter interface {
 	Get(ctx context.Context, guid string) (*resource.Organization, error)
 }
 
-type ServiceInstancesInterface interface {
+type ServiceInstanceGetter interface {
 	Get(ctx context.Context, guid string) (*resource.ServiceInstance, error)
 }
 
-type ServiceOfferingsInterface interface {
+type ServiceOfferingGetter interface {
 	Get(ctx context.Context, guid string) (*resource.ServiceOffering, error)
 }
 
-type ServicePlansInterface interface {
+type ServicePlanGetter interface {
 	Get(ctx context.Context, guid string) (*resource.ServicePlan, error)
 }
 
-type SpacesInterface interface {
+type SpaceGetter interface {
 	Get(ctx context.Context, guid string) (*resource.Space, error)
 }
 
 type cfClientWrapper struct {
-	Organizations    OrganizationsInterface
-	ServiceInstances ServiceInstancesInterface
-	ServiceOfferings ServiceOfferingsInterface
-	ServicePlans     ServicePlansInterface
-	Spaces           SpacesInterface
+	Organizations    OrganizationGetter
+	ServiceInstances ServiceInstanceGetter
+	ServiceOfferings ServiceOfferingGetter
+	ServicePlans     ServicePlanGetter
+	Spaces           SpaceGetter
 }
 
 func NewCFClientWrapper() (*cfClientWrapper, error) {
