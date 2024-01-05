@@ -2,8 +2,9 @@ package brokerTags
 
 import (
 	"errors"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 type mockCFClientWrapper struct {
@@ -97,8 +98,8 @@ func TestGenerateTags(t *testing.T) {
 		"Instance name":         "instance-1",
 	}
 
-	if !reflect.DeepEqual(tags, expectedTags) {
-		t.Errorf("expected: %s, got: %s", expectedTags, tags)
+	if !cmp.Equal(tags, expectedTags) {
+		t.Errorf(cmp.Diff(tags, expectedTags))
 	}
 }
 

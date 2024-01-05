@@ -4,6 +4,21 @@ import (
 	"time"
 )
 
+const (
+	BrokerTagKey              = "broker"
+	ClientTagKey              = "client"
+	OrganizationGUIDTagKey    = "Organization GUID"
+	OrganizationNameTagKey    = "Organization name"
+	ServiceInstanceGUIDTagKey = "Instance GUID"
+	ServiceInstanceNameTagKey = "Instance name"
+	ServiceOfferingGUIDTagKey = "Service GUID"
+	ServiceOfferingNameTagKey = "Service offering name"
+	ServicePlanGUIDTagKey     = "Plan GUID"
+	ServicePlanNameTagKey     = "Service plan name"
+	SpaceGUIDTagKey           = "Space GUID"
+	SpaceNameTagKey           = "Space name"
+)
+
 type TagManager struct {
 	broker          string
 	cfClientWrapper CFClientWrapper
@@ -29,60 +44,60 @@ func (t *TagManager) GenerateTags(
 ) (map[string]string, error) {
 	tags := make(map[string]string)
 
-	tags["client"] = "Cloud Foundry"
+	tags[ClientTagKey] = "Cloud Foundry"
 
-	tags["broker"] = t.broker
+	tags[BrokerTagKey] = t.broker
 
 	tags[action+" at"] = time.Now().Format(time.RFC822Z)
 
 	if serviceGUID != "" {
-		tags["Service GUID"] = serviceGUID
+		tags[ServiceOfferingGUIDTagKey] = serviceGUID
 
 		serviceOfferingName, err := t.cfClientWrapper.getServiceOfferingName(serviceGUID)
 		if err != nil {
 			return nil, err
 		}
-		tags["Service offering name"] = serviceOfferingName
+		tags[ServiceOfferingNameTagKey] = serviceOfferingName
 	}
 
 	if servicePlanGUID != "" {
-		tags["Plan GUID"] = servicePlanGUID
+		tags[ServicePlanGUIDTagKey] = servicePlanGUID
 
 		servicePlanName, err := t.cfClientWrapper.getServicePlanName(servicePlanGUID)
 		if err != nil {
 			return nil, err
 		}
-		tags["Service plan name"] = servicePlanName
+		tags[ServicePlanNameTagKey] = servicePlanName
 	}
 
 	if organizationGUID != "" {
-		tags["Organization GUID"] = organizationGUID
+		tags[OrganizationGUIDTagKey] = organizationGUID
 
 		organizationName, err := t.cfClientWrapper.getOrganizationName(organizationGUID)
 		if err != nil {
 			return nil, err
 		}
-		tags["Organization name"] = organizationName
+		tags[OrganizationNameTagKey] = organizationName
 	}
 
 	if spaceGUID != "" {
-		tags["Space GUID"] = spaceGUID
+		tags[SpaceGUIDTagKey] = spaceGUID
 
 		spaceName, err := t.cfClientWrapper.getSpaceName(organizationGUID)
 		if err != nil {
 			return nil, err
 		}
-		tags["Space name"] = spaceName
+		tags[SpaceNameTagKey] = spaceName
 	}
 
 	if instanceGUID != "" {
-		tags["Instance GUID"] = instanceGUID
+		tags[ServiceInstanceGUIDTagKey] = instanceGUID
 
 		instanceName, err := t.cfClientWrapper.getServiceInstanceName(instanceGUID)
 		if err != nil {
 			return nil, err
 		}
-		tags["Instance name"] = instanceName
+		tags[ServiceInstanceNameTagKey] = instanceName
 	}
 
 	return tags, nil
