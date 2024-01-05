@@ -56,50 +56,110 @@ func (m *mockCFClientWrapper) getServiceInstanceName(instanceGUID string) (strin
 }
 
 func TestGenerateTags(t *testing.T) {
-	tagManager := &TagManager{
-		broker: "AWS S3 Service Broker",
-		cfNameResolver: &mockCFClientWrapper{
-			serviceOfferingName: "offering-1",
-			servicePlanName:     "plan-1",
-			organizationName:    "org-1",
-			spaceName:           "space-1",
-			instanceName:        "instance-1",
+	testCases := map[string]struct {
+		tagManager       *TagManager
+		expectedTags     map[string]string
+		action           Action
+		serviceGUID      string
+		servicePlanGUID  string
+		organizationGUID string
+		spaceGUID        string
+		instanceGUID     string
+	}{
+		"Create": {
+			action:           Create,
+			serviceGUID:      "abc1",
+			servicePlanGUID:  "abc2",
+			organizationGUID: "abc3",
+			spaceGUID:        "abc4",
+			instanceGUID:     "abc5",
+			tagManager: &TagManager{
+				broker: "AWS S3 Service Broker",
+				cfNameResolver: &mockCFClientWrapper{
+					serviceOfferingName: "offering-1",
+					servicePlanName:     "plan-1",
+					organizationName:    "org-1",
+					spaceName:           "space-1",
+					instanceName:        "instance-1",
+				},
+			},
+			expectedTags: map[string]string{
+				"client":                "Cloud Foundry",
+				"broker":                "AWS S3 Service Broker",
+				"Service GUID":          "abc1",
+				"Plan GUID":             "abc2",
+				"Organization GUID":     "abc3",
+				"Space GUID":            "abc4",
+				"Instance GUID":         "abc5",
+				"Service offering name": "offering-1",
+				"Service plan name":     "plan-1",
+				"Organization name":     "org-1",
+				"Space name":            "space-1",
+				"Instance name":         "instance-1",
+			},
+		},
+		"Update": {
+			action:           Update,
+			serviceGUID:      "abc1",
+			servicePlanGUID:  "abc2",
+			organizationGUID: "abc3",
+			spaceGUID:        "abc4",
+			instanceGUID:     "abc5",
+			tagManager: &TagManager{
+				broker: "AWS S3 Service Broker",
+				cfNameResolver: &mockCFClientWrapper{
+					serviceOfferingName: "offering-1",
+					servicePlanName:     "plan-1",
+					organizationName:    "org-1",
+					spaceName:           "space-1",
+					instanceName:        "instance-1",
+				},
+			},
+			expectedTags: map[string]string{
+				"client":                "Cloud Foundry",
+				"broker":                "AWS S3 Service Broker",
+				"Service GUID":          "abc1",
+				"Plan GUID":             "abc2",
+				"Organization GUID":     "abc3",
+				"Space GUID":            "abc4",
+				"Instance GUID":         "abc5",
+				"Service offering name": "offering-1",
+				"Service plan name":     "plan-1",
+				"Organization name":     "org-1",
+				"Space name":            "space-1",
+				"Instance name":         "instance-1",
+			},
 		},
 	}
-	tags, err := tagManager.GenerateTags(
-		Create,
-		"abc1",
-		"abc2",
-		"abc3",
-		"abc4",
-		"abc5",
-	)
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
 
-	if tags[CreatedAtTagKey] == "" {
-		t.Fatalf("Expected a value for %s tag", CreatedAtTagKey)
-	}
-	delete(tags, CreatedAtTagKey)
-
-	expectedTags := map[string]string{
-		"client":                "Cloud Foundry",
-		"broker":                "AWS S3 Service Broker",
-		"Service GUID":          "abc1",
-		"Plan GUID":             "abc2",
-		"Organization GUID":     "abc3",
-		"Space GUID":            "abc4",
-		"Instance GUID":         "abc5",
-		"Service offering name": "offering-1",
-		"Service plan name":     "plan-1",
-		"Organization name":     "org-1",
-		"Space name":            "space-1",
-		"Instance name":         "instance-1",
-	}
-
-	if !cmp.Equal(tags, expectedTags) {
-		t.Errorf(cmp.Diff(tags, expectedTags))
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			tags, err := test.tagManager.GenerateTags(
+				test.action,
+				test.serviceGUID,
+				test.servicePlanGUID,
+				test.organizationGUID,
+				test.spaceGUID,
+				test.instanceGUID,
+			)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			if test.action == Create {
+				if tags[CreatedAtTagKey] == "" {
+					t.Fatalf("Expected a value for %s tag", CreatedAtTagKey)
+				}
+				delete(tags, CreatedAtTagKey)
+			} else if test.action == Update {
+				if tags[UpdatedAtTagKey] == "" {
+					t.Fatalf("Expected a value for %s tag", UpdatedAtTagKey)
+				}
+				delete(tags, UpdatedAtTagKey)
+			}
+			if !cmp.Equal(tags, test.expectedTags) {
+				t.Errorf(cmp.Diff(tags, test.expectedTags))
+			}
+		})
 	}
 }
 
