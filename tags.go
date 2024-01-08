@@ -48,7 +48,7 @@ func (t *TagManager) GenerateTags(
 
 	tags[BrokerTagKey] = t.broker
 
-	tags[action.getTagKey()] = time.Now().Format(time.RFC822Z)
+	tags[action.getTagKey()] = time.Now().Format(time.RFC3339)
 
 	if serviceGUID != "" {
 		tags[ServiceOfferingGUIDTagKey] = serviceGUID
