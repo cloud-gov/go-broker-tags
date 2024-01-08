@@ -19,6 +19,17 @@ const (
 	SpaceNameTagKey           = "Space name"
 )
 
+type TagGenerator interface {
+	GenerateTags(
+		action Action,
+		serviceGUID string,
+		servicePlanGUID string,
+		organizationGUID string,
+		spaceGUID string,
+		instanceGUID string,
+	) (map[string]string, error)
+}
+
 type TagManager struct {
 	broker         string
 	cfNameResolver NameResolver
