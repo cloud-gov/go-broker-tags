@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/cloudfoundry-community/go-cfclient/v3/resource"
-	"github.com/google/go-cmp/cmp"
 )
 
 type mockOrganizations struct {
@@ -99,84 +97,6 @@ func (s *mockSpaces) Get(ctx context.Context, guid string) (*resource.Space, err
 	return &resource.Space{
 		Name: s.spaceName,
 	}, nil
-}
-
-func TestGetRequiredEnvVars(t *testing.T) {
-	testCases := map[string]struct {
-		envVars              map[string]string
-		expectedErr          string
-		expectedEnvVarValues map[string]string
-	}{
-		"no env vars": {
-			expectedErr: fmt.Sprintf("%s environment variable is required", cfApiUrlEnvVar),
-		},
-		"one env var set": {
-			expectedErr: fmt.Sprintf("%s environment variable is required", cfApiClientIdEnvVar),
-			envVars: map[string]string{
-				(cfApiUrlEnvVar): "api-1",
-			},
-		},
-		"two env vars set": {
-			expectedErr: fmt.Sprintf("%s environment variable is required", cfApiClientSecretEnvVar),
-			envVars: map[string]string{
-				(cfApiUrlEnvVar):      "api-1",
-				(cfApiClientIdEnvVar): "client-1",
-			},
-		},
-		"all env vars set": {
-			envVars: map[string]string{
-				(cfApiUrlEnvVar):          "api-1",
-				(cfApiClientIdEnvVar):     "client-1",
-				(cfApiClientSecretEnvVar): "secret",
-			},
-			expectedEnvVarValues: map[string]string{
-				(cfApiUrlEnvVar):          "api-1",
-				(cfApiClientIdEnvVar):     "client-1",
-				(cfApiClientSecretEnvVar): "secret",
-			},
-		},
-	}
-	for name, test := range testCases {
-		t.Run(name, func(t *testing.T) {
-			for envVar, value := range test.envVars {
-				os.Setenv(envVar, value)
-			}
-
-			values, err := getRequiredEnvVars()
-			if err != nil && test.expectedErr != err.Error() {
-				t.Fatalf("expected error: %s, got %s", test.expectedErr, err.Error())
-			}
-
-			if !cmp.Equal(values, test.expectedEnvVarValues) {
-				t.Errorf(cmp.Diff(values, test.expectedEnvVarValues))
-			}
-
-			for envVar := range test.envVars {
-				os.Unsetenv(envVar)
-			}
-		})
-	}
-}
-
-func TestNewCFNameResolver(t *testing.T) {
-	testCases := map[string]struct {
-		envVars   map[string]string
-		expectErr bool
-	}{
-		"no env vars": {
-			expectErr: true,
-		},
-	}
-	for name, test := range testCases {
-		t.Run(name, func(t *testing.T) {
-			_, err := newCFNameResolver()
-			if err != nil && !test.expectErr {
-				t.Fatal("unexpected error")
-			} else if err == nil && test.expectErr {
-				t.Fatal("expected error, got nil")
-			}
-		})
-	}
 }
 
 func TestGetOrganizationName(t *testing.T) {

@@ -24,8 +24,16 @@ type TagManager struct {
 	cfNameResolver NameResolver
 }
 
-func NewManager() (*TagManager, error) {
-	cfNameResolver, err := newCFNameResolver()
+func NewManager(
+	cfApiUrl string,
+	cfApiClientId string,
+	cfApiClientSecret string,
+) (*TagManager, error) {
+	cfNameResolver, err := newCFNameResolver(
+		cfApiUrl,
+		cfApiClientId,
+		cfApiClientSecret,
+	)
 	if err != nil {
 		return nil, err
 	}
