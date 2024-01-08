@@ -1,4 +1,4 @@
-package brokerTags
+package brokertags
 
 import (
 	"time"

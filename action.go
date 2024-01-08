@@ -1,4 +1,4 @@
-package brokerTags
+package brokertags
 
 // Action - Custom type to hold value for broker action
 type Action int
