@@ -90,7 +90,7 @@ func (t *CfTagManager) GenerateTags(
 	if spaceGUID != "" {
 		tags[SpaceGUIDTagKey] = spaceGUID
 
-		spaceName, err := t.cfNameResolver.getSpaceName(organizationGUID)
+		spaceName, err := t.cfNameResolver.getSpaceName(spaceGUID)
 		if err != nil {
 			return nil, err
 		}
