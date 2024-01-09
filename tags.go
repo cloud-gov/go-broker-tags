@@ -11,33 +11,52 @@ const (
 	OrganizationNameTagKey    = "Organization name"
 	ServiceInstanceGUIDTagKey = "Instance GUID"
 	ServiceInstanceNameTagKey = "Instance name"
-	ServiceOfferingGUIDTagKey = "Service GUID"
-	ServiceOfferingNameTagKey = "Service offering name"
-	ServicePlanGUIDTagKey     = "Plan GUID"
-	ServicePlanNameTagKey     = "Service plan name"
+	ServiceIDTagKey           = "Service ID"
+	ServicePlanIdTagKey       = "Plan ID"
 	SpaceGUIDTagKey           = "Space GUID"
 	SpaceNameTagKey           = "Space name"
 )
 
-type TagManager struct {
+type TagManager interface {
+	GenerateTags(
+		action Action,
+		serviceGUID string,
+		servicePlanGUID string,
+		organizationGUID string,
+		spaceGUID string,
+		instanceGUID string,
+	) (map[string]string, error)
+}
+
+type CfTagManager struct {
 	broker         string
 	cfNameResolver NameResolver
 }
 
-func NewManager() (*TagManager, error) {
-	cfNameResolver, err := newCFNameResolver()
+func NewCFTagManager(
+	broker string,
+	cfApiUrl string,
+	cfApiClientId string,
+	cfApiClientSecret string,
+) (*CfTagManager, error) {
+	cfNameResolver, err := newCFNameResolver(
+		cfApiUrl,
+		cfApiClientId,
+		cfApiClientSecret,
+	)
 	if err != nil {
 		return nil, err
 	}
-	return &TagManager{
-		cfNameResolver: cfNameResolver,
+	return &CfTagManager{
+		broker,
+		cfNameResolver,
 	}, nil
 }
 
-func (t *TagManager) GenerateTags(
+func (t *CfTagManager) GenerateTags(
 	action Action,
-	serviceGUID string,
-	servicePlanGUID string,
+	serviceID string,
+	planID string,
 	organizationGUID string,
 	spaceGUID string,
 	instanceGUID string,
@@ -50,24 +69,12 @@ func (t *TagManager) GenerateTags(
 
 	tags[action.getTagKey()] = time.Now().Format(time.RFC3339)
 
-	if serviceGUID != "" {
-		tags[ServiceOfferingGUIDTagKey] = serviceGUID
-
-		serviceOfferingName, err := t.cfNameResolver.getServiceOfferingName(serviceGUID)
-		if err != nil {
-			return nil, err
-		}
-		tags[ServiceOfferingNameTagKey] = serviceOfferingName
+	if serviceID != "" {
+		tags[ServiceIDTagKey] = serviceID
 	}
 
-	if servicePlanGUID != "" {
-		tags[ServicePlanGUIDTagKey] = servicePlanGUID
-
-		servicePlanName, err := t.cfNameResolver.getServicePlanName(servicePlanGUID)
-		if err != nil {
-			return nil, err
-		}
-		tags[ServicePlanNameTagKey] = servicePlanName
+	if planID != "" {
+		tags[ServicePlanIdTagKey] = planID
 	}
 
 	if organizationGUID != "" {
@@ -83,7 +90,7 @@ func (t *TagManager) GenerateTags(
 	if spaceGUID != "" {
 		tags[SpaceGUIDTagKey] = spaceGUID
 
-		spaceName, err := t.cfNameResolver.getSpaceName(organizationGUID)
+		spaceName, err := t.cfNameResolver.getSpaceName(spaceGUID)
 		if err != nil {
 			return nil, err
 		}
