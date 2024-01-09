@@ -14,11 +14,17 @@ type mockCFClientWrapper struct {
 	spaceName          string
 	getInstanceErr     error
 	instanceName       string
+	spaceGUID          string
+	organizationGUID   string
+	instanceGUID       string
 }
 
 func (m *mockCFClientWrapper) getOrganizationName(organizationGUID string) (string, error) {
 	if m.getOrganizationErr != nil {
 		return "", m.getOrganizationErr
+	}
+	if m.organizationGUID != "" && m.organizationGUID != organizationGUID {
+		return "", errors.New("organization GUID does not match expected value")
 	}
 	return m.organizationName, nil
 }
@@ -27,12 +33,18 @@ func (m *mockCFClientWrapper) getSpaceName(spaceGUID string) (string, error) {
 	if m.getSpaceErr != nil {
 		return "", m.getSpaceErr
 	}
+	if m.spaceGUID != "" && m.spaceGUID != spaceGUID {
+		return "", errors.New("space GUID does not match expected value")
+	}
 	return m.spaceName, nil
 }
 
 func (m *mockCFClientWrapper) getServiceInstanceName(instanceGUID string) (string, error) {
 	if m.getInstanceErr != nil {
 		return "", m.getInstanceErr
+	}
+	if m.instanceGUID != "" && m.instanceGUID != instanceGUID {
+		return "", errors.New("instance GUID does not match expected value")
 	}
 	return m.instanceName, nil
 }
@@ -61,6 +73,9 @@ func TestGenerateTags(t *testing.T) {
 					organizationName: "org-1",
 					spaceName:        "space-1",
 					instanceName:     "instance-1",
+					spaceGUID:        "abc4",
+					organizationGUID: "abc3",
+					instanceGUID:     "abc5",
 				},
 			},
 			expectedTags: map[string]string{
@@ -89,6 +104,9 @@ func TestGenerateTags(t *testing.T) {
 					organizationName: "org-1",
 					spaceName:        "space-1",
 					instanceName:     "instance-1",
+					spaceGUID:        "abc4",
+					organizationGUID: "abc3",
+					instanceGUID:     "abc5",
 				},
 			},
 			expectedTags: map[string]string{
