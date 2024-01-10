@@ -27,24 +27,6 @@ func (o *mockOrganizations) Get(ctx context.Context, guid string) (*resource.Org
 	}, nil
 }
 
-type mockServiceInstances struct {
-	getServiceInstanceErr error
-	serviceInstanceName   string
-	serviceInstanceGuid   string
-}
-
-func (si *mockServiceInstances) Get(ctx context.Context, guid string) (*resource.ServiceInstance, error) {
-	if si.getServiceInstanceErr != nil {
-		return nil, si.getServiceInstanceErr
-	}
-	if guid != si.serviceInstanceGuid {
-		return nil, fmt.Errorf("guid argument: %s does not match expected guid: %s", guid, si.serviceInstanceGuid)
-	}
-	return &resource.ServiceInstance{
-		Name: si.serviceInstanceName,
-	}, nil
-}
-
 type mockSpaces struct {
 	getSpaceErr error
 	spaceName   string
@@ -76,8 +58,7 @@ func TestGetOrganizationName(t *testing.T) {
 					organizationName: "org-1",
 					organizationGuid: "guid-1",
 				},
-				ServiceInstances: &mockServiceInstances{},
-				Spaces:           &mockSpaces{},
+				Spaces: &mockSpaces{},
 			},
 			organizationGuid:         "guid-1",
 			expectedOrganizationName: "org-1",
@@ -85,10 +66,7 @@ func TestGetOrganizationName(t *testing.T) {
 		"error": {
 			cfClientWrapper: &cfNameResolver{
 				Organizations: &mockOrganizations{},
-				ServiceInstances: &mockServiceInstances{
-					getServiceInstanceErr: errors.New("error getting organization"),
-				},
-				Spaces: &mockSpaces{},
+				Spaces:        &mockSpaces{},
 			},
 			expectedErr: errors.New("error getting organization"),
 		},
@@ -107,50 +85,6 @@ func TestGetOrganizationName(t *testing.T) {
 	}
 }
 
-func TestGetServiceInstanceName(t *testing.T) {
-	testCases := map[string]struct {
-		cfClientWrapper      *cfNameResolver
-		expectedInstanceName string
-		expectedErr          error
-		serviceInstanceGuid  string
-	}{
-		"success": {
-			cfClientWrapper: &cfNameResolver{
-				Organizations: &mockOrganizations{},
-				ServiceInstances: &mockServiceInstances{
-					serviceInstanceName: "instance-1",
-					serviceInstanceGuid: "guid-1",
-				},
-				Spaces: &mockSpaces{},
-			},
-			serviceInstanceGuid:  "guid-1",
-			expectedInstanceName: "instance-1",
-		},
-		"error": {
-			cfClientWrapper: &cfNameResolver{
-				Organizations: &mockOrganizations{},
-				ServiceInstances: &mockServiceInstances{
-					getServiceInstanceErr: errors.New("error getting service instance"),
-				},
-				Spaces: &mockSpaces{},
-			},
-			expectedErr: errors.New("error getting service instance"),
-		},
-	}
-
-	for name, test := range testCases {
-		t.Run(name, func(t *testing.T) {
-			offeringName, err := test.cfClientWrapper.getServiceInstanceName(test.serviceInstanceGuid)
-			if offeringName != test.expectedInstanceName {
-				t.Fatalf("expected instance name: %s, got: %s", test.expectedInstanceName, offeringName)
-			}
-			if err != nil && err.Error() != test.expectedErr.Error() {
-				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
-			}
-		})
-	}
-}
-
 func TestGetSpaceName(t *testing.T) {
 	testCases := map[string]struct {
 		cfClientWrapper   *cfNameResolver
@@ -160,8 +94,7 @@ func TestGetSpaceName(t *testing.T) {
 	}{
 		"success": {
 			cfClientWrapper: &cfNameResolver{
-				Organizations:    &mockOrganizations{},
-				ServiceInstances: &mockServiceInstances{},
+				Organizations: &mockOrganizations{},
 				Spaces: &mockSpaces{
 					spaceName: "plan-1",
 					spaceGuid: "guid-1",
@@ -172,8 +105,7 @@ func TestGetSpaceName(t *testing.T) {
 		},
 		"error": {
 			cfClientWrapper: &cfNameResolver{
-				Organizations:    &mockOrganizations{},
-				ServiceInstances: &mockServiceInstances{},
+				Organizations: &mockOrganizations{},
 				Spaces: &mockSpaces{
 					getSpaceErr: errors.New("error getting space"),
 				},

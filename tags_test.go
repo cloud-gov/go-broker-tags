@@ -12,8 +12,6 @@ type mockCFClientWrapper struct {
 	organizationName   string
 	getSpaceErr        error
 	spaceName          string
-	getInstanceErr     error
-	instanceName       string
 	spaceGUID          string
 	organizationGUID   string
 	instanceGUID       string
@@ -37,16 +35,6 @@ func (m *mockCFClientWrapper) getSpaceName(spaceGUID string) (string, error) {
 		return "", errors.New("space GUID does not match expected value")
 	}
 	return m.spaceName, nil
-}
-
-func (m *mockCFClientWrapper) getServiceInstanceName(instanceGUID string) (string, error) {
-	if m.getInstanceErr != nil {
-		return "", m.getInstanceErr
-	}
-	if m.instanceGUID != "" && m.instanceGUID != instanceGUID {
-		return "", errors.New("instance GUID does not match expected value")
-	}
-	return m.instanceName, nil
 }
 
 func TestGenerateTags(t *testing.T) {
@@ -74,7 +62,6 @@ func TestGenerateTags(t *testing.T) {
 				cfNameResolver: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
-					instanceName:     "instance-1",
 					spaceGUID:        "abc4",
 					organizationGUID: "abc3",
 					instanceGUID:     "abc5",
@@ -91,7 +78,6 @@ func TestGenerateTags(t *testing.T) {
 				"Instance GUID":         "abc5",
 				"Organization name":     "org-1",
 				"Space name":            "space-1",
-				"Instance name":         "instance-1",
 			},
 		},
 		"Update": {
@@ -107,7 +93,6 @@ func TestGenerateTags(t *testing.T) {
 				cfNameResolver: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
-					instanceName:     "instance-1",
 					spaceGUID:        "abc4",
 					organizationGUID: "abc3",
 					instanceGUID:     "abc5",
@@ -124,7 +109,6 @@ func TestGenerateTags(t *testing.T) {
 				"Instance GUID":         "abc5",
 				"Organization name":     "org-1",
 				"Space name":            "space-1",
-				"Instance name":         "instance-1",
 			},
 		},
 		"no broker name": {
@@ -139,7 +123,6 @@ func TestGenerateTags(t *testing.T) {
 				cfNameResolver: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
-					instanceName:     "instance-1",
 					spaceGUID:        "abc4",
 					organizationGUID: "abc3",
 					instanceGUID:     "abc5",
@@ -154,7 +137,6 @@ func TestGenerateTags(t *testing.T) {
 				"Instance GUID":         "abc5",
 				"Organization name":     "org-1",
 				"Space name":            "space-1",
-				"Instance name":         "instance-1",
 			},
 		},
 		"no environment tag": {
@@ -170,7 +152,6 @@ func TestGenerateTags(t *testing.T) {
 				cfNameResolver: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
-					instanceName:     "instance-1",
 					spaceGUID:        "abc4",
 					organizationGUID: "abc3",
 					instanceGUID:     "abc5",
@@ -186,7 +167,6 @@ func TestGenerateTags(t *testing.T) {
 				"Instance GUID":         "abc5",
 				"Organization name":     "org-1",
 				"Space name":            "space-1",
-				"Instance name":         "instance-1",
 			},
 		},
 	}
@@ -241,15 +221,6 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 				},
 			},
 			expectedErr: errors.New("error getting space name"),
-		},
-		"error getting instance name": {
-			tagManager: &CfTagManager{
-				broker: "AWS Broker",
-				cfNameResolver: &mockCFClientWrapper{
-					getInstanceErr: errors.New("error getting instance name"),
-				},
-			},
-			expectedErr: errors.New("error getting instance name"),
 		},
 	}
 

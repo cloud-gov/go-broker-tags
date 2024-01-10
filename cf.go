@@ -10,7 +10,6 @@ import (
 
 type NameResolver interface {
 	getOrganizationName(organizationGUID string) (string, error)
-	getServiceInstanceName(instanceGUID string) (string, error)
 	getSpaceName(spaceGUID string) (string, error)
 }
 
@@ -18,18 +17,13 @@ type OrganizationGetter interface {
 	Get(ctx context.Context, guid string) (*resource.Organization, error)
 }
 
-type ServiceInstanceGetter interface {
-	Get(ctx context.Context, guid string) (*resource.ServiceInstance, error)
-}
-
 type SpaceGetter interface {
 	Get(ctx context.Context, guid string) (*resource.Space, error)
 }
 
 type cfNameResolver struct {
-	Organizations    OrganizationGetter
-	ServiceInstances ServiceInstanceGetter
-	Spaces           SpaceGetter
+	Organizations OrganizationGetter
+	Spaces        SpaceGetter
 }
 
 func newCFNameResolver(
@@ -50,18 +44,9 @@ func newCFNameResolver(
 		return nil, err
 	}
 	return &cfNameResolver{
-		Organizations:    cf.Organizations,
-		ServiceInstances: cf.ServiceInstances,
-		Spaces:           cf.Spaces,
+		Organizations: cf.Organizations,
+		Spaces:        cf.Spaces,
 	}, nil
-}
-
-func (c *cfNameResolver) getServiceInstanceName(instanceGUID string) (string, error) {
-	instance, err := c.ServiceInstances.Get(context.Background(), instanceGUID)
-	if err != nil {
-		return "", err
-	}
-	return instance.Name, nil
 }
 
 func (c *cfNameResolver) getOrganizationName(organizationGUID string) (string, error) {

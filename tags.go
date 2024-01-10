@@ -12,7 +12,6 @@ const (
 	OrganizationGUIDTagKey    = "Organization GUID"
 	OrganizationNameTagKey    = "Organization name"
 	ServiceInstanceGUIDTagKey = "Instance GUID"
-	ServiceInstanceNameTagKey = "Instance name"
 	ServiceNameTagKey         = "Service offering name"
 	ServicePlanName           = "Service plan name"
 	SpaceGUIDTagKey           = "Space GUID"
@@ -109,12 +108,6 @@ func (t *CfTagManager) GenerateTags(
 
 	if instanceGUID != "" {
 		tags[ServiceInstanceGUIDTagKey] = instanceGUID
-
-		instanceName, err := t.cfNameResolver.getServiceInstanceName(instanceGUID)
-		if err != nil {
-			return nil, err
-		}
-		tags[ServiceInstanceNameTagKey] = instanceName
 	}
 
 	return tags, nil
