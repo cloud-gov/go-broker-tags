@@ -13,8 +13,8 @@ const (
 	OrganizationNameTagKey    = "Organization name"
 	ServiceInstanceGUIDTagKey = "Instance GUID"
 	ServiceInstanceNameTagKey = "Instance name"
-	ServiceIDTagKey           = "Service ID"
-	ServicePlanIdTagKey       = "Plan ID"
+	ServiceNameTagKey         = "Service offering name"
+	ServicePlanName           = "Service plan name"
 	SpaceGUIDTagKey           = "Space GUID"
 	SpaceNameTagKey           = "Space name"
 )
@@ -23,8 +23,8 @@ type TagManager interface {
 	GenerateTags(
 		action Action,
 		environment string,
-		serviceGUID string,
-		servicePlanGUID string,
+		serviceName string,
+		servicePlanName string,
 		organizationGUID string,
 		spaceGUID string,
 		instanceGUID string,
@@ -59,8 +59,8 @@ func NewCFTagManager(
 func (t *CfTagManager) GenerateTags(
 	action Action,
 	environment string,
-	serviceID string,
-	planID string,
+	serviceName string,
+	planName string,
 	organizationGUID string,
 	spaceGUID string,
 	instanceGUID string,
@@ -69,18 +69,22 @@ func (t *CfTagManager) GenerateTags(
 
 	tags[ClientTagKey] = "Cloud Foundry"
 
-	tags[BrokerTagKey] = t.broker
-
-	tags[EnvironmentTagKey] = strings.ToLower(environment)
-
 	tags[action.getTagKey()] = time.Now().Format(time.RFC3339)
 
-	if serviceID != "" {
-		tags[ServiceIDTagKey] = serviceID
+	if t.broker != "" {
+		tags[BrokerTagKey] = t.broker
 	}
 
-	if planID != "" {
-		tags[ServicePlanIdTagKey] = planID
+	if environment != "" {
+		tags[EnvironmentTagKey] = strings.ToLower(environment)
+	}
+
+	if serviceName != "" {
+		tags[ServiceNameTagKey] = serviceName
+	}
+
+	if planName != "" {
+		tags[ServicePlanName] = planName
 	}
 
 	if organizationGUID != "" {

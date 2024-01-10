@@ -51,24 +51,24 @@ func (m *mockCFClientWrapper) getServiceInstanceName(instanceGUID string) (strin
 
 func TestGenerateTags(t *testing.T) {
 	testCases := map[string]struct {
-		tagManager       *CfTagManager
-		expectedTags     map[string]string
-		action           Action
-		environment      string
-		serviceID        string
-		servicePlanID    string
-		organizationGUID string
-		spaceGUID        string
-		instanceGUID     string
+		tagManager          *CfTagManager
+		expectedTags        map[string]string
+		action              Action
+		environment         string
+		serviceOfferingName string
+		servicePlanName     string
+		organizationGUID    string
+		spaceGUID           string
+		instanceGUID        string
 	}{
 		"Create": {
-			action:           Create,
-			serviceID:        "abc1",
-			servicePlanID:    "abc2",
-			organizationGUID: "abc3",
-			spaceGUID:        "abc4",
-			instanceGUID:     "abc5",
-			environment:      "testing",
+			action:              Create,
+			serviceOfferingName: "abc1",
+			servicePlanName:     "abc2",
+			organizationGUID:    "abc3",
+			spaceGUID:           "abc4",
+			instanceGUID:        "abc5",
+			environment:         "testing",
 			tagManager: &CfTagManager{
 				broker: "AWS Broker",
 				cfNameResolver: &mockCFClientWrapper{
@@ -81,27 +81,27 @@ func TestGenerateTags(t *testing.T) {
 				},
 			},
 			expectedTags: map[string]string{
-				"client":            "Cloud Foundry",
-				"broker":            "AWS Broker",
-				"environment":       "testing",
-				"Service ID":        "abc1",
-				"Plan ID":           "abc2",
-				"Organization GUID": "abc3",
-				"Space GUID":        "abc4",
-				"Instance GUID":     "abc5",
-				"Organization name": "org-1",
-				"Space name":        "space-1",
-				"Instance name":     "instance-1",
+				"client":                "Cloud Foundry",
+				"broker":                "AWS Broker",
+				"environment":           "testing",
+				"Service offering name": "abc1",
+				"Service plan name":     "abc2",
+				"Organization GUID":     "abc3",
+				"Space GUID":            "abc4",
+				"Instance GUID":         "abc5",
+				"Organization name":     "org-1",
+				"Space name":            "space-1",
+				"Instance name":         "instance-1",
 			},
 		},
 		"Update": {
-			action:           Update,
-			serviceID:        "abc1",
-			servicePlanID:    "abc2",
-			organizationGUID: "abc3",
-			spaceGUID:        "abc4",
-			instanceGUID:     "abc5",
-			environment:      "testing",
+			action:              Update,
+			serviceOfferingName: "abc1",
+			servicePlanName:     "abc2",
+			organizationGUID:    "abc3",
+			spaceGUID:           "abc4",
+			instanceGUID:        "abc5",
+			environment:         "testing",
 			tagManager: &CfTagManager{
 				broker: "AWS Broker",
 				cfNameResolver: &mockCFClientWrapper{
@@ -114,17 +114,79 @@ func TestGenerateTags(t *testing.T) {
 				},
 			},
 			expectedTags: map[string]string{
-				"client":            "Cloud Foundry",
-				"broker":            "AWS Broker",
-				"environment":       "testing",
-				"Service ID":        "abc1",
-				"Plan ID":           "abc2",
-				"Organization GUID": "abc3",
-				"Space GUID":        "abc4",
-				"Instance GUID":     "abc5",
-				"Organization name": "org-1",
-				"Space name":        "space-1",
-				"Instance name":     "instance-1",
+				"client":                "Cloud Foundry",
+				"broker":                "AWS Broker",
+				"environment":           "testing",
+				"Service offering name": "abc1",
+				"Service plan name":     "abc2",
+				"Organization GUID":     "abc3",
+				"Space GUID":            "abc4",
+				"Instance GUID":         "abc5",
+				"Organization name":     "org-1",
+				"Space name":            "space-1",
+				"Instance name":         "instance-1",
+			},
+		},
+		"no broker name": {
+			action:              Create,
+			serviceOfferingName: "abc1",
+			servicePlanName:     "abc2",
+			organizationGUID:    "abc3",
+			spaceGUID:           "abc4",
+			instanceGUID:        "abc5",
+			environment:         "",
+			tagManager: &CfTagManager{
+				cfNameResolver: &mockCFClientWrapper{
+					organizationName: "org-1",
+					spaceName:        "space-1",
+					instanceName:     "instance-1",
+					spaceGUID:        "abc4",
+					organizationGUID: "abc3",
+					instanceGUID:     "abc5",
+				},
+			},
+			expectedTags: map[string]string{
+				"client":                "Cloud Foundry",
+				"Service offering name": "abc1",
+				"Service plan name":     "abc2",
+				"Organization GUID":     "abc3",
+				"Space GUID":            "abc4",
+				"Instance GUID":         "abc5",
+				"Organization name":     "org-1",
+				"Space name":            "space-1",
+				"Instance name":         "instance-1",
+			},
+		},
+		"no environment tag": {
+			action:              Create,
+			serviceOfferingName: "abc1",
+			servicePlanName:     "abc2",
+			organizationGUID:    "abc3",
+			spaceGUID:           "abc4",
+			instanceGUID:        "abc5",
+			environment:         "",
+			tagManager: &CfTagManager{
+				broker: "AWS Broker",
+				cfNameResolver: &mockCFClientWrapper{
+					organizationName: "org-1",
+					spaceName:        "space-1",
+					instanceName:     "instance-1",
+					spaceGUID:        "abc4",
+					organizationGUID: "abc3",
+					instanceGUID:     "abc5",
+				},
+			},
+			expectedTags: map[string]string{
+				"client":                "Cloud Foundry",
+				"broker":                "AWS Broker",
+				"Service offering name": "abc1",
+				"Service plan name":     "abc2",
+				"Organization GUID":     "abc3",
+				"Space GUID":            "abc4",
+				"Instance GUID":         "abc5",
+				"Organization name":     "org-1",
+				"Space name":            "space-1",
+				"Instance name":         "instance-1",
 			},
 		},
 	}
@@ -134,8 +196,8 @@ func TestGenerateTags(t *testing.T) {
 			tags, err := test.tagManager.GenerateTags(
 				test.action,
 				test.environment,
-				test.serviceID,
-				test.servicePlanID,
+				test.serviceOfferingName,
+				test.servicePlanName,
 				test.organizationGUID,
 				test.spaceGUID,
 				test.instanceGUID,
