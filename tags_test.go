@@ -54,6 +54,7 @@ func TestGenerateTags(t *testing.T) {
 		tagManager       *CfTagManager
 		expectedTags     map[string]string
 		action           Action
+		environment      string
 		serviceID        string
 		servicePlanID    string
 		organizationGUID string
@@ -67,6 +68,7 @@ func TestGenerateTags(t *testing.T) {
 			organizationGUID: "abc3",
 			spaceGUID:        "abc4",
 			instanceGUID:     "abc5",
+			environment:      "testing",
 			tagManager: &CfTagManager{
 				broker: "AWS Broker",
 				cfNameResolver: &mockCFClientWrapper{
@@ -81,6 +83,7 @@ func TestGenerateTags(t *testing.T) {
 			expectedTags: map[string]string{
 				"client":            "Cloud Foundry",
 				"broker":            "AWS Broker",
+				"environment":       "testing",
 				"Service ID":        "abc1",
 				"Plan ID":           "abc2",
 				"Organization GUID": "abc3",
@@ -98,6 +101,7 @@ func TestGenerateTags(t *testing.T) {
 			organizationGUID: "abc3",
 			spaceGUID:        "abc4",
 			instanceGUID:     "abc5",
+			environment:      "testing",
 			tagManager: &CfTagManager{
 				broker: "AWS Broker",
 				cfNameResolver: &mockCFClientWrapper{
@@ -112,6 +116,7 @@ func TestGenerateTags(t *testing.T) {
 			expectedTags: map[string]string{
 				"client":            "Cloud Foundry",
 				"broker":            "AWS Broker",
+				"environment":       "testing",
 				"Service ID":        "abc1",
 				"Plan ID":           "abc2",
 				"Organization GUID": "abc3",
@@ -128,6 +133,7 @@ func TestGenerateTags(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			tags, err := test.tagManager.GenerateTags(
 				test.action,
+				test.environment,
 				test.serviceID,
 				test.servicePlanID,
 				test.organizationGUID,
@@ -189,6 +195,7 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			_, err := test.tagManager.GenerateTags(
 				Create,
+				"testing",
 				"abc1",
 				"abc2",
 				"abc3",

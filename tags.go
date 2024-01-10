@@ -1,12 +1,14 @@
 package brokertags
 
 import (
+	"strings"
 	"time"
 )
 
 const (
 	BrokerTagKey              = "broker"
 	ClientTagKey              = "client"
+	EnvironmentTagKey         = "environment"
 	OrganizationGUIDTagKey    = "Organization GUID"
 	OrganizationNameTagKey    = "Organization name"
 	ServiceInstanceGUIDTagKey = "Instance GUID"
@@ -55,6 +57,7 @@ func NewCFTagManager(
 
 func (t *CfTagManager) GenerateTags(
 	action Action,
+	environment string,
 	serviceID string,
 	planID string,
 	organizationGUID string,
@@ -66,6 +69,8 @@ func (t *CfTagManager) GenerateTags(
 	tags[ClientTagKey] = "Cloud Foundry"
 
 	tags[BrokerTagKey] = t.broker
+
+	tags[EnvironmentTagKey] = strings.ToLower(environment)
 
 	tags[action.getTagKey()] = time.Now().Format(time.RFC3339)
 
