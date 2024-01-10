@@ -22,6 +22,7 @@ const (
 type TagManager interface {
 	GenerateTags(
 		action Action,
+		environment string,
 		serviceGUID string,
 		servicePlanGUID string,
 		organizationGUID string,
