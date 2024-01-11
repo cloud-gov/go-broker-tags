@@ -48,13 +48,13 @@ func (s *mockSpaces) Get(ctx context.Context, guid string) (*resource.Space, err
 
 func TestGetOrganization(t *testing.T) {
 	testCases := map[string]struct {
-		cfClientWrapper      *cfResourceGetter
+		cfResourceGetter     *cfResourceGetter
 		expectedOrganization *resource.Organization
 		expectedErr          error
 		organizationGuid     string
 	}{
 		"success": {
-			cfClientWrapper: &cfResourceGetter{
+			cfResourceGetter: &cfResourceGetter{
 				Organizations: &mockOrganizations{
 					organizationName: "org-1",
 					organizationGuid: "guid-1",
@@ -67,7 +67,7 @@ func TestGetOrganization(t *testing.T) {
 			},
 		},
 		"error": {
-			cfClientWrapper: &cfResourceGetter{
+			cfResourceGetter: &cfResourceGetter{
 				Organizations: &mockOrganizations{
 					getOrganizationErr: errors.New("error getting organization"),
 				},
@@ -79,7 +79,7 @@ func TestGetOrganization(t *testing.T) {
 
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
-			organization, err := test.cfClientWrapper.getOrganization(test.organizationGuid)
+			organization, err := test.cfResourceGetter.getOrganization(test.organizationGuid)
 			if !cmp.Equal(organization, test.expectedOrganization) {
 				t.Errorf(cmp.Diff(organization, test.expectedOrganization))
 			}
@@ -93,13 +93,13 @@ func TestGetOrganization(t *testing.T) {
 
 func TestGetSpace(t *testing.T) {
 	testCases := map[string]struct {
-		cfClientWrapper *cfResourceGetter
-		expectedSpace   *resource.Space
-		expectedErr     error
-		spaceGuid       string
+		cfResourceGetter *cfResourceGetter
+		expectedSpace    *resource.Space
+		expectedErr      error
+		spaceGuid        string
 	}{
 		"success": {
-			cfClientWrapper: &cfResourceGetter{
+			cfResourceGetter: &cfResourceGetter{
 				Organizations: &mockOrganizations{},
 				Spaces: &mockSpaces{
 					spaceName: "space-1",
@@ -112,7 +112,7 @@ func TestGetSpace(t *testing.T) {
 			},
 		},
 		"error": {
-			cfClientWrapper: &cfResourceGetter{
+			cfResourceGetter: &cfResourceGetter{
 				Organizations: &mockOrganizations{},
 				Spaces: &mockSpaces{
 					getSpaceErr: errors.New("error getting space"),
@@ -124,7 +124,7 @@ func TestGetSpace(t *testing.T) {
 
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
-			space, err := test.cfClientWrapper.getSpace(test.spaceGuid)
+			space, err := test.cfResourceGetter.getSpace(test.spaceGuid)
 			if !cmp.Equal(space, test.expectedSpace) {
 				t.Errorf(cmp.Diff(space, test.expectedSpace))
 			}
