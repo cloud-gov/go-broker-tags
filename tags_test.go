@@ -41,6 +41,13 @@ func (m *mockCFClientWrapper) getSpace(spaceGUID string) (*resource.Space, error
 	}
 	return &resource.Space{
 		Name: m.spaceName,
+		Relationships: &resource.SpaceRelationships{
+			Organization: &resource.ToOneRelationship{
+				Data: &resource.Relationship{
+					GUID: m.organizationGUID,
+				},
+			},
+		},
 	}, nil
 }
 
@@ -53,6 +60,13 @@ func (m *mockCFClientWrapper) getServiceInstance(instanceGUID string) (*resource
 	}
 	return &resource.ServiceInstance{
 		Name: m.instanceName,
+		Relationships: resource.ServiceInstanceRelationships{
+			Space: &resource.ToOneRelationship{
+				Data: &resource.Relationship{
+					GUID: m.spaceGUID,
+				},
+			},
+		},
 	}, nil
 }
 
@@ -64,6 +78,7 @@ func TestGenerateTags(t *testing.T) {
 		serviceOfferingName string
 		servicePlanName     string
 		resourceGUIDS       ResourceGUIDs
+		getMissingResources bool
 	}{
 		"Create": {
 			action:              Create,
@@ -193,6 +208,71 @@ func TestGenerateTags(t *testing.T) {
 				"Space name":            "space-1",
 			},
 		},
+		"get missing organization": {
+			action:              Create,
+			serviceOfferingName: "abc1",
+			servicePlanName:     "abc2",
+			resourceGUIDS: ResourceGUIDs{
+				spaceGUID:    "abc4",
+				instanceGUID: "abc5",
+			},
+			getMissingResources: true,
+			tagManager: &CfTagManager{
+				broker:      "AWS Broker",
+				environment: "testing",
+				cfResourceGetter: &mockCFClientWrapper{
+					organizationGUID: "abc3",
+					organizationName: "org-1",
+					spaceName:        "space-1",
+					spaceGUID:        "abc4",
+					instanceGUID:     "abc5",
+				},
+			},
+			expectedTags: map[string]string{
+				"client":                "Cloud Foundry",
+				"broker":                "AWS Broker",
+				"environment":           "testing",
+				"Service offering name": "abc1",
+				"Service plan name":     "abc2",
+				"Organization GUID":     "abc3",
+				"Space GUID":            "abc4",
+				"Instance GUID":         "abc5",
+				"Organization name":     "org-1",
+				"Space name":            "space-1",
+			},
+		},
+		"get missing space and organization": {
+			action:              Create,
+			serviceOfferingName: "abc1",
+			servicePlanName:     "abc2",
+			resourceGUIDS: ResourceGUIDs{
+				instanceGUID: "abc5",
+			},
+			getMissingResources: true,
+			tagManager: &CfTagManager{
+				broker:      "AWS Broker",
+				environment: "testing",
+				cfResourceGetter: &mockCFClientWrapper{
+					spaceGUID:        "abc4",
+					organizationGUID: "abc3",
+					organizationName: "org-1",
+					spaceName:        "space-1",
+					instanceGUID:     "abc5",
+				},
+			},
+			expectedTags: map[string]string{
+				"client":                "Cloud Foundry",
+				"broker":                "AWS Broker",
+				"environment":           "testing",
+				"Service offering name": "abc1",
+				"Service plan name":     "abc2",
+				"Organization GUID":     "abc3",
+				"Space GUID":            "abc4",
+				"Instance GUID":         "abc5",
+				"Organization name":     "org-1",
+				"Space name":            "space-1",
+			},
+		},
 	}
 
 	for name, test := range testCases {
@@ -202,7 +282,7 @@ func TestGenerateTags(t *testing.T) {
 				test.serviceOfferingName,
 				test.servicePlanName,
 				test.resourceGUIDS,
-				false,
+				test.getMissingResources,
 			)
 
 			if err != nil {
