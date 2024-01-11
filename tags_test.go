@@ -345,3 +345,59 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestGetSpaceGuid(t *testing.T) {
+	testCases := map[string]struct {
+		tagManager   *CfTagManager
+		instanceGUID string
+		expectedGuid string
+	}{
+		"success": {
+			tagManager: &CfTagManager{
+				cfResourceGetter: &mockCFClientWrapper{
+					instanceGUID: "instance-1",
+					spaceGUID:    "space-1",
+				},
+			},
+			instanceGUID: "instance-1",
+			expectedGuid: "space-1",
+		},
+	}
+
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			spaceGUID, _ := test.tagManager.getSpaceGuid(test.instanceGUID)
+			if spaceGUID != test.expectedGuid {
+				t.Fatal("fail")
+			}
+		})
+	}
+}
+
+func TestGetOrganizationGuid(t *testing.T) {
+	testCases := map[string]struct {
+		tagManager   *CfTagManager
+		spaceGUID    string
+		expectedGuid string
+	}{
+		"success": {
+			tagManager: &CfTagManager{
+				cfResourceGetter: &mockCFClientWrapper{
+					organizationGUID: "org-1",
+					spaceGUID:        "space-1",
+				},
+			},
+			spaceGUID:    "space-1",
+			expectedGuid: "org-1",
+		},
+	}
+
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			spaceGUID, _ := test.tagManager.getOrganizationGuid(test.spaceGUID)
+			if spaceGUID != test.expectedGuid {
+				t.Fatal("fail")
+			}
+		})
+	}
+}
