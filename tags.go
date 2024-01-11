@@ -57,13 +57,18 @@ func NewCFTagManager(
 	}, nil
 }
 
+type ResourceGUIDs struct {
+	instanceGUID     string
+	spaceGUID        string
+	organizationGUID string
+}
+
 func (t *CfTagManager) GenerateTags(
 	action Action,
 	serviceName string,
 	planName string,
-	instanceGUID string,
-	spaceGUID string,
-	organizationGUID string,
+	resourceGUIDs ResourceGUIDs,
+	getMissingResources bool,
 ) (map[string]string, error) {
 	tags := make(map[string]string)
 
@@ -87,13 +92,22 @@ func (t *CfTagManager) GenerateTags(
 		tags[ServicePlanName] = planName
 	}
 
-	if instanceGUID != "" {
-		tags[ServiceInstanceGUIDTagKey] = instanceGUID
+	if resourceGUIDs.instanceGUID != "" {
+		tags[ServiceInstanceGUIDTagKey] = resourceGUIDs.instanceGUID
 	}
 
-	spaceGUID, err := t.getSpaceGuid(spaceGUID, instanceGUID)
-	if err != nil {
-		return nil, err
+	var (
+		spaceGUID        string
+		organizationGUID string
+		err              error
+	)
+
+	spaceGUID = resourceGUIDs.spaceGUID
+	if spaceGUID == "" && resourceGUIDs.instanceGUID != "" && getMissingResources {
+		spaceGUID, err = t.getSpaceGuid(resourceGUIDs.instanceGUID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if spaceGUID != "" {
@@ -106,9 +120,12 @@ func (t *CfTagManager) GenerateTags(
 		tags[SpaceNameTagKey] = space.Name
 	}
 
-	organizationGUID, err = t.getOrganizationGuid(organizationGUID, spaceGUID)
-	if err != nil {
-		return nil, err
+	organizationGUID = resourceGUIDs.organizationGUID
+	if organizationGUID == "" && spaceGUID != "" && getMissingResources {
+		organizationGUID, err = t.getOrganizationGuid(spaceGUID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if organizationGUID != "" {
@@ -124,36 +141,20 @@ func (t *CfTagManager) GenerateTags(
 	return tags, nil
 }
 
-func (t *CfTagManager) getSpaceGuid(
-	spaceGUID string,
-	instanceGUID string,
-) (string, error) {
-	if spaceGUID != "" {
-		return spaceGUID, nil
+func (t *CfTagManager) getSpaceGuid(instanceGUID string) (string, error) {
+	instance, err := t.cfResourceGetter.getServiceInstance(instanceGUID)
+	if err != nil {
+		return "", err
 	}
-	if instanceGUID != "" {
-		instance, err := t.cfResourceGetter.getServiceInstance(instanceGUID)
-		if err != nil {
-			return spaceGUID, err
-		}
-		spaceGUID = instance.Relationships.Space.Data.GUID
-	}
+	spaceGUID := instance.Relationships.Space.Data.GUID
 	return spaceGUID, nil
 }
 
-func (t *CfTagManager) getOrganizationGuid(
-	organizationGUID string,
-	spaceGUID string,
-) (string, error) {
-	if organizationGUID != "" {
-		return organizationGUID, nil
+func (t *CfTagManager) getOrganizationGuid(spaceGUID string) (string, error) {
+	space, err := t.cfResourceGetter.getSpace(spaceGUID)
+	if err != nil {
+		return "", err
 	}
-	if spaceGUID != "" {
-		space, err := t.cfResourceGetter.getSpace(spaceGUID)
-		if err != nil {
-			return organizationGUID, err
-		}
-		organizationGUID = space.Relationships.Organization.Data.GUID
-	}
+	organizationGUID := space.Relationships.Organization.Data.GUID
 	return organizationGUID, nil
 }

@@ -9,13 +9,15 @@ import (
 )
 
 type mockCFClientWrapper struct {
-	getOrganizationErr error
-	organizationName   string
-	getSpaceErr        error
-	spaceName          string
-	spaceGUID          string
-	organizationGUID   string
-	instanceGUID       string
+	getOrganizationErr    error
+	organizationName      string
+	getSpaceErr           error
+	spaceName             string
+	getServiceInstanceErr error
+	instanceName          string
+	spaceGUID             string
+	organizationGUID      string
+	instanceGUID          string
 }
 
 func (m *mockCFClientWrapper) getOrganization(organizationGUID string) (*resource.Organization, error) {
@@ -43,7 +45,15 @@ func (m *mockCFClientWrapper) getSpace(spaceGUID string) (*resource.Space, error
 }
 
 func (m *mockCFClientWrapper) getServiceInstance(instanceGUID string) (*resource.ServiceInstance, error) {
-	return nil, nil
+	if m.getServiceInstanceErr != nil {
+		return nil, m.getServiceInstanceErr
+	}
+	if m.instanceGUID != "" && m.instanceGUID != instanceGUID {
+		return nil, errors.New("instance GUID does not match expected value")
+	}
+	return &resource.ServiceInstance{
+		Name: m.instanceName,
+	}, nil
 }
 
 func TestGenerateTags(t *testing.T) {
@@ -53,17 +63,17 @@ func TestGenerateTags(t *testing.T) {
 		action              Action
 		serviceOfferingName string
 		servicePlanName     string
-		organizationGUID    string
-		spaceGUID           string
-		instanceGUID        string
+		resourceGUIDS       ResourceGUIDs
 	}{
 		"Create": {
 			action:              Create,
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
-			organizationGUID:    "abc3",
-			spaceGUID:           "abc4",
-			instanceGUID:        "abc5",
+			resourceGUIDS: ResourceGUIDs{
+				organizationGUID: "abc3",
+				spaceGUID:        "abc4",
+				instanceGUID:     "abc5",
+			},
 			tagManager: &CfTagManager{
 				broker:      "AWS Broker",
 				environment: "testing",
@@ -92,9 +102,11 @@ func TestGenerateTags(t *testing.T) {
 			action:              Update,
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
-			organizationGUID:    "abc3",
-			spaceGUID:           "abc4",
-			instanceGUID:        "abc5",
+			resourceGUIDS: ResourceGUIDs{
+				organizationGUID: "abc3",
+				spaceGUID:        "abc4",
+				instanceGUID:     "abc5",
+			},
 			tagManager: &CfTagManager{
 				broker:      "AWS Broker",
 				environment: "testing",
@@ -123,9 +135,11 @@ func TestGenerateTags(t *testing.T) {
 			action:              Create,
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
-			organizationGUID:    "abc3",
-			spaceGUID:           "abc4",
-			instanceGUID:        "abc5",
+			resourceGUIDS: ResourceGUIDs{
+				organizationGUID: "abc3",
+				spaceGUID:        "abc4",
+				instanceGUID:     "abc5",
+			},
 			tagManager: &CfTagManager{
 				environment: "testing",
 				cfResourceGetter: &mockCFClientWrapper{
@@ -152,9 +166,11 @@ func TestGenerateTags(t *testing.T) {
 			action:              Create,
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
-			organizationGUID:    "abc3",
-			spaceGUID:           "abc4",
-			instanceGUID:        "abc5",
+			resourceGUIDS: ResourceGUIDs{
+				organizationGUID: "abc3",
+				spaceGUID:        "abc4",
+				instanceGUID:     "abc5",
+			},
 			tagManager: &CfTagManager{
 				broker: "AWS Broker",
 				cfResourceGetter: &mockCFClientWrapper{
@@ -185,9 +201,8 @@ func TestGenerateTags(t *testing.T) {
 				test.action,
 				test.serviceOfferingName,
 				test.servicePlanName,
-				test.instanceGUID,
-				test.spaceGUID,
-				test.organizationGUID,
+				test.resourceGUIDS,
+				false,
 			)
 
 			if err != nil {
@@ -237,9 +252,12 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 				Create,
 				"abc1",
 				"abc2",
-				"abc3",
-				"abc4",
-				"abc5",
+				ResourceGUIDs{
+					organizationGUID: "org-1",
+					instanceGUID:     "instance-1",
+					spaceGUID:        "space-1",
+				},
+				false,
 			)
 			if err == nil || err.Error() != test.expectedErr.Error() {
 				t.Fatalf("did not received expected err: %s, got: %s", test.expectedErr, err)
