@@ -67,7 +67,7 @@ func TestGenerateTags(t *testing.T) {
 			tagManager: &CfTagManager{
 				broker:      "AWS Broker",
 				environment: "testing",
-				cfNameResolver: &mockCFClientWrapper{
+				cfResourceGetter: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
 					spaceGUID:        "abc4",
@@ -98,7 +98,7 @@ func TestGenerateTags(t *testing.T) {
 			tagManager: &CfTagManager{
 				broker:      "AWS Broker",
 				environment: "testing",
-				cfNameResolver: &mockCFClientWrapper{
+				cfResourceGetter: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
 					spaceGUID:        "abc4",
@@ -128,7 +128,7 @@ func TestGenerateTags(t *testing.T) {
 			instanceGUID:        "abc5",
 			tagManager: &CfTagManager{
 				environment: "testing",
-				cfNameResolver: &mockCFClientWrapper{
+				cfResourceGetter: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
 					spaceGUID:        "abc4",
@@ -157,7 +157,7 @@ func TestGenerateTags(t *testing.T) {
 			instanceGUID:        "abc5",
 			tagManager: &CfTagManager{
 				broker: "AWS Broker",
-				cfNameResolver: &mockCFClientWrapper{
+				cfResourceGetter: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
 					spaceGUID:        "abc4",
@@ -214,7 +214,7 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 	}{
 		"error getting organization": {
 			tagManager: &CfTagManager{
-				cfNameResolver: &mockCFClientWrapper{
+				cfResourceGetter: &mockCFClientWrapper{
 					getOrganizationErr: errors.New("error getting organization"),
 				},
 			},
@@ -223,7 +223,7 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 		"error getting space": {
 			tagManager: &CfTagManager{
 				broker: "AWS Broker",
-				cfNameResolver: &mockCFClientWrapper{
+				cfResourceGetter: &mockCFClientWrapper{
 					getSpaceErr: errors.New("error getting space"),
 				},
 			},

@@ -8,7 +8,7 @@ import (
 	"github.com/cloudfoundry-community/go-cfclient/v3/resource"
 )
 
-type NameResolver interface {
+type ResourceGetter interface {
 	getOrganization(organizationGUID string) (*resource.Organization, error)
 	getSpace(spaceGUID string) (*resource.Space, error)
 	getServiceInstance(instanceGUID string) (*resource.ServiceInstance, error)
@@ -26,17 +26,17 @@ type ServiceInstanceGetter interface {
 	Get(ctx context.Context, guid string) (*resource.ServiceInstance, error)
 }
 
-type cfNameResolver struct {
+type cfResourceGetter struct {
 	Organizations    OrganizationGetter
 	Spaces           SpaceGetter
 	ServiceInstances ServiceInstanceGetter
 }
 
-func newCFNameResolver(
+func newCFResourceGetter(
 	cfApiUrl string,
 	cfApiClientId string,
 	cfApiClientSecret string,
-) (*cfNameResolver, error) {
+) (*cfResourceGetter, error) {
 	cfg, err := config.NewClientSecret(
 		cfApiUrl,
 		cfApiClientId,
@@ -49,14 +49,14 @@ func newCFNameResolver(
 	if err != nil {
 		return nil, err
 	}
-	return &cfNameResolver{
+	return &cfResourceGetter{
 		Organizations:    cf.Organizations,
 		Spaces:           cf.Spaces,
 		ServiceInstances: cf.ServiceInstances,
 	}, nil
 }
 
-func (c *cfNameResolver) getOrganization(organizationGUID string) (*resource.Organization, error) {
+func (c *cfResourceGetter) getOrganization(organizationGUID string) (*resource.Organization, error) {
 	organization, err := c.Organizations.Get(context.Background(), organizationGUID)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (c *cfNameResolver) getOrganization(organizationGUID string) (*resource.Org
 	return organization, nil
 }
 
-func (c *cfNameResolver) getSpace(spaceGUID string) (*resource.Space, error) {
+func (c *cfResourceGetter) getSpace(spaceGUID string) (*resource.Space, error) {
 	space, err := c.Spaces.Get(context.Background(), spaceGUID)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (c *cfNameResolver) getSpace(spaceGUID string) (*resource.Space, error) {
 	return space, nil
 }
 
-func (c *cfNameResolver) getServiceInstance(instanceGUID string) (*resource.ServiceInstance, error) {
+func (c *cfResourceGetter) getServiceInstance(instanceGUID string) (*resource.ServiceInstance, error) {
 	instance, err := c.ServiceInstances.Get(context.Background(), instanceGUID)
 	if err != nil {
 		return nil, err

@@ -30,9 +30,9 @@ type TagManager interface {
 }
 
 type CfTagManager struct {
-	broker         string
-	environment    string
-	cfNameResolver NameResolver
+	broker           string
+	environment      string
+	cfResourceGetter ResourceGetter
 }
 
 func NewCFTagManager(
@@ -42,7 +42,7 @@ func NewCFTagManager(
 	cfApiClientId string,
 	cfApiClientSecret string,
 ) (*CfTagManager, error) {
-	cfNameResolver, err := newCFNameResolver(
+	cfResourceGetter, err := newCFResourceGetter(
 		cfApiUrl,
 		cfApiClientId,
 		cfApiClientSecret,
@@ -53,7 +53,7 @@ func NewCFTagManager(
 	return &CfTagManager{
 		broker,
 		environment,
-		cfNameResolver,
+		cfResourceGetter,
 	}, nil
 }
 
@@ -99,7 +99,7 @@ func (t *CfTagManager) GenerateTags(
 	if spaceGUID != "" {
 		tags[SpaceGUIDTagKey] = spaceGUID
 
-		space, err := t.cfNameResolver.getSpace(spaceGUID)
+		space, err := t.cfResourceGetter.getSpace(spaceGUID)
 		if err != nil {
 			return nil, err
 		}
@@ -114,7 +114,7 @@ func (t *CfTagManager) GenerateTags(
 	if organizationGUID != "" {
 		tags[OrganizationGUIDTagKey] = organizationGUID
 
-		organization, err := t.cfNameResolver.getOrganization(organizationGUID)
+		organization, err := t.cfResourceGetter.getOrganization(organizationGUID)
 		if err != nil {
 			return nil, err
 		}
@@ -132,7 +132,7 @@ func (t *CfTagManager) getSpaceGuid(
 		return spaceGUID, nil
 	}
 	if instanceGUID != "" {
-		instance, err := t.cfNameResolver.getServiceInstance(instanceGUID)
+		instance, err := t.cfResourceGetter.getServiceInstance(instanceGUID)
 		if err != nil {
 			return spaceGUID, err
 		}
@@ -149,7 +149,7 @@ func (t *CfTagManager) getOrganizationGuid(
 		return organizationGUID, nil
 	}
 	if spaceGUID != "" {
-		space, err := t.cfNameResolver.getSpace(spaceGUID)
+		space, err := t.cfResourceGetter.getSpace(spaceGUID)
 		if err != nil {
 			return organizationGUID, err
 		}
