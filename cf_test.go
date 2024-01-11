@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/cloudfoundry-community/go-cfclient/v3/resource"
+	"github.com/google/go-cmp/cmp"
 )
 
 type mockOrganizations struct {
@@ -45,12 +46,12 @@ func (s *mockSpaces) Get(ctx context.Context, guid string) (*resource.Space, err
 	}, nil
 }
 
-func TestGetOrganizationName(t *testing.T) {
+func TestGetOrganization(t *testing.T) {
 	testCases := map[string]struct {
-		cfClientWrapper          *cfNameResolver
-		expectedOrganizationName string
-		expectedErr              error
-		organizationGuid         string
+		cfClientWrapper      *cfNameResolver
+		expectedOrganization *resource.Organization
+		expectedErr          error
+		organizationGuid     string
 	}{
 		"success": {
 			cfClientWrapper: &cfNameResolver{
@@ -60,13 +61,17 @@ func TestGetOrganizationName(t *testing.T) {
 				},
 				Spaces: &mockSpaces{},
 			},
-			organizationGuid:         "guid-1",
-			expectedOrganizationName: "org-1",
+			organizationGuid: "guid-1",
+			expectedOrganization: &resource.Organization{
+				Name: "org-1",
+			},
 		},
 		"error": {
 			cfClientWrapper: &cfNameResolver{
-				Organizations: &mockOrganizations{},
-				Spaces:        &mockSpaces{},
+				Organizations: &mockOrganizations{
+					getOrganizationErr: errors.New("error getting organization"),
+				},
+				Spaces: &mockSpaces{},
 			},
 			expectedErr: errors.New("error getting organization"),
 		},
@@ -74,34 +79,37 @@ func TestGetOrganizationName(t *testing.T) {
 
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
-			organizationName, err := test.cfClientWrapper.getOrganizationName(test.organizationGuid)
-			if organizationName != test.expectedOrganizationName {
-				t.Fatalf("expected organization name: %s, got: %s", test.expectedOrganizationName, organizationName)
+			organization, err := test.cfClientWrapper.getOrganization(test.organizationGuid)
+			if !cmp.Equal(organization, test.expectedOrganization) {
+				t.Errorf(cmp.Diff(organization, test.expectedOrganization))
 			}
-			if err != nil && err.Error() != test.expectedErr.Error() {
+			if (test.expectedErr != nil && err == nil) ||
+				(err != nil && err.Error() != test.expectedErr.Error()) {
 				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
 			}
 		})
 	}
 }
 
-func TestGetSpaceName(t *testing.T) {
+func TestGetSpace(t *testing.T) {
 	testCases := map[string]struct {
-		cfClientWrapper   *cfNameResolver
-		expectedSpaceName string
-		expectedErr       error
-		spaceGuid         string
+		cfClientWrapper *cfNameResolver
+		expectedSpace   *resource.Space
+		expectedErr     error
+		spaceGuid       string
 	}{
 		"success": {
 			cfClientWrapper: &cfNameResolver{
 				Organizations: &mockOrganizations{},
 				Spaces: &mockSpaces{
-					spaceName: "plan-1",
+					spaceName: "space-1",
 					spaceGuid: "guid-1",
 				},
 			},
-			spaceGuid:         "guid-1",
-			expectedSpaceName: "plan-1",
+			spaceGuid: "guid-1",
+			expectedSpace: &resource.Space{
+				Name: "space-1",
+			},
 		},
 		"error": {
 			cfClientWrapper: &cfNameResolver{
@@ -116,11 +124,12 @@ func TestGetSpaceName(t *testing.T) {
 
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
-			spaceName, err := test.cfClientWrapper.getSpaceName(test.spaceGuid)
-			if spaceName != test.expectedSpaceName {
-				t.Fatalf("expected space name: %s, got: %s", test.expectedSpaceName, spaceName)
+			space, err := test.cfClientWrapper.getSpace(test.spaceGuid)
+			if !cmp.Equal(space, test.expectedSpace) {
+				t.Errorf(cmp.Diff(space, test.expectedSpace))
 			}
-			if err != nil && err.Error() != test.expectedErr.Error() {
+			if (test.expectedErr != nil && err == nil) ||
+				(err != nil && err.Error() != test.expectedErr.Error()) {
 				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
 			}
 		})

@@ -91,33 +91,69 @@ func (t *CfTagManager) GenerateTags(
 		tags[ServiceInstanceGUIDTagKey] = instanceGUID
 	}
 
-	if instanceGUID != "" && spaceGUID == "" {
-		instance, err := t.cfNameResolver.getServiceInstance(instanceGUID)
-		if err != nil {
-			return nil, err
-		}
-		spaceGUID = instance.Relationships.Space.Data.GUID
+	spaceGUID, err := t.getSpaceGuid(spaceGUID, instanceGUID)
+	if err != nil {
+		return nil, err
 	}
 
 	if spaceGUID != "" {
 		tags[SpaceGUIDTagKey] = spaceGUID
 
-		spaceName, err := t.cfNameResolver.getSpaceName(spaceGUID)
+		space, err := t.cfNameResolver.getSpace(spaceGUID)
 		if err != nil {
 			return nil, err
 		}
-		tags[SpaceNameTagKey] = spaceName
+		tags[SpaceNameTagKey] = space.Name
+	}
+
+	organizationGUID, err = t.getOrganizationGuid(organizationGUID, spaceGUID)
+	if err != nil {
+		return nil, err
 	}
 
 	if organizationGUID != "" {
 		tags[OrganizationGUIDTagKey] = organizationGUID
 
-		organizationName, err := t.cfNameResolver.getOrganizationName(organizationGUID)
+		organization, err := t.cfNameResolver.getOrganization(organizationGUID)
 		if err != nil {
 			return nil, err
 		}
-		tags[OrganizationNameTagKey] = organizationName
+		tags[OrganizationNameTagKey] = organization.Name
 	}
 
 	return tags, nil
+}
+
+func (t *CfTagManager) getSpaceGuid(
+	spaceGUID string,
+	instanceGUID string,
+) (string, error) {
+	if spaceGUID != "" {
+		return spaceGUID, nil
+	}
+	if instanceGUID != "" {
+		instance, err := t.cfNameResolver.getServiceInstance(instanceGUID)
+		if err != nil {
+			return spaceGUID, err
+		}
+		spaceGUID = instance.Relationships.Space.Data.GUID
+	}
+	return spaceGUID, nil
+}
+
+func (t *CfTagManager) getOrganizationGuid(
+	organizationGUID string,
+	spaceGUID string,
+) (string, error) {
+	if organizationGUID != "" {
+		return organizationGUID, nil
+	}
+	if spaceGUID != "" {
+		space, err := t.cfNameResolver.getSpace(spaceGUID)
+		if err != nil {
+			return organizationGUID, err
+		}
+		organizationGUID = space.Relationships.Organization.Data.GUID
+	}
+	return organizationGUID, nil
 }

@@ -18,24 +18,28 @@ type mockCFClientWrapper struct {
 	instanceGUID       string
 }
 
-func (m *mockCFClientWrapper) getOrganizationName(organizationGUID string) (string, error) {
+func (m *mockCFClientWrapper) getOrganization(organizationGUID string) (*resource.Organization, error) {
 	if m.getOrganizationErr != nil {
-		return "", m.getOrganizationErr
+		return nil, m.getOrganizationErr
 	}
 	if m.organizationGUID != "" && m.organizationGUID != organizationGUID {
-		return "", errors.New("organization GUID does not match expected value")
+		return nil, errors.New("organization GUID does not match expected value")
 	}
-	return m.organizationName, nil
+	return &resource.Organization{
+		Name: m.organizationName,
+	}, nil
 }
 
-func (m *mockCFClientWrapper) getSpaceName(spaceGUID string) (string, error) {
+func (m *mockCFClientWrapper) getSpace(spaceGUID string) (*resource.Space, error) {
 	if m.getSpaceErr != nil {
-		return "", m.getSpaceErr
+		return nil, m.getSpaceErr
 	}
 	if m.spaceGUID != "" && m.spaceGUID != spaceGUID {
-		return "", errors.New("space GUID does not match expected value")
+		return nil, errors.New("space GUID does not match expected value")
 	}
-	return m.spaceName, nil
+	return &resource.Space{
+		Name: m.spaceName,
+	}, nil
 }
 
 func (m *mockCFClientWrapper) getServiceInstance(instanceGUID string) (*resource.ServiceInstance, error) {
@@ -181,9 +185,9 @@ func TestGenerateTags(t *testing.T) {
 				test.action,
 				test.serviceOfferingName,
 				test.servicePlanName,
-				test.organizationGUID,
-				test.spaceGUID,
 				test.instanceGUID,
+				test.spaceGUID,
+				test.organizationGUID,
 			)
 
 			if err != nil {
@@ -208,22 +212,22 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 		tagManager  *CfTagManager
 		expectedErr error
 	}{
-		"error getting organization name": {
+		"error getting organization": {
 			tagManager: &CfTagManager{
 				cfNameResolver: &mockCFClientWrapper{
-					getOrganizationErr: errors.New("error getting organization name"),
+					getOrganizationErr: errors.New("error getting organization"),
 				},
 			},
-			expectedErr: errors.New("error getting organization name"),
+			expectedErr: errors.New("error getting organization"),
 		},
-		"error getting space name": {
+		"error getting space": {
 			tagManager: &CfTagManager{
 				broker: "AWS Broker",
 				cfNameResolver: &mockCFClientWrapper{
-					getSpaceErr: errors.New("error getting space name"),
+					getSpaceErr: errors.New("error getting space"),
 				},
 			},
-			expectedErr: errors.New("error getting space name"),
+			expectedErr: errors.New("error getting space"),
 		},
 	}
 

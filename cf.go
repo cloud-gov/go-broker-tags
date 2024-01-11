@@ -9,8 +9,8 @@ import (
 )
 
 type NameResolver interface {
-	getOrganizationName(organizationGUID string) (string, error)
-	getSpaceName(spaceGUID string) (string, error)
+	getOrganization(organizationGUID string) (*resource.Organization, error)
+	getSpace(spaceGUID string) (*resource.Space, error)
 	getServiceInstance(instanceGUID string) (*resource.ServiceInstance, error)
 }
 
@@ -56,20 +56,20 @@ func newCFNameResolver(
 	}, nil
 }
 
-func (c *cfNameResolver) getOrganizationName(organizationGUID string) (string, error) {
+func (c *cfNameResolver) getOrganization(organizationGUID string) (*resource.Organization, error) {
 	organization, err := c.Organizations.Get(context.Background(), organizationGUID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return organization.Name, nil
+	return organization, nil
 }
 
-func (c *cfNameResolver) getSpaceName(spaceGUID string) (string, error) {
+func (c *cfNameResolver) getSpace(spaceGUID string) (*resource.Space, error) {
 	space, err := c.Spaces.Get(context.Background(), spaceGUID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return space.Name, nil
+	return space, nil
 }
 
 func (c *cfNameResolver) getServiceInstance(instanceGUID string) (*resource.ServiceInstance, error) {
