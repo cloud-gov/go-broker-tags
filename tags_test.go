@@ -42,7 +42,6 @@ func TestGenerateTags(t *testing.T) {
 		tagManager          *CfTagManager
 		expectedTags        map[string]string
 		action              Action
-		environment         string
 		serviceOfferingName string
 		servicePlanName     string
 		organizationGUID    string
@@ -56,9 +55,9 @@ func TestGenerateTags(t *testing.T) {
 			organizationGUID:    "abc3",
 			spaceGUID:           "abc4",
 			instanceGUID:        "abc5",
-			environment:         "testing",
 			tagManager: &CfTagManager{
-				broker: "AWS Broker",
+				broker:      "AWS Broker",
+				environment: "testing",
 				cfNameResolver: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
@@ -87,9 +86,9 @@ func TestGenerateTags(t *testing.T) {
 			organizationGUID:    "abc3",
 			spaceGUID:           "abc4",
 			instanceGUID:        "abc5",
-			environment:         "testing",
 			tagManager: &CfTagManager{
-				broker: "AWS Broker",
+				broker:      "AWS Broker",
+				environment: "testing",
 				cfNameResolver: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
@@ -118,8 +117,8 @@ func TestGenerateTags(t *testing.T) {
 			organizationGUID:    "abc3",
 			spaceGUID:           "abc4",
 			instanceGUID:        "abc5",
-			environment:         "",
 			tagManager: &CfTagManager{
+				environment: "testing",
 				cfNameResolver: &mockCFClientWrapper{
 					organizationName: "org-1",
 					spaceName:        "space-1",
@@ -130,6 +129,7 @@ func TestGenerateTags(t *testing.T) {
 			},
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
+				"environment":           "testing",
 				"Service offering name": "abc1",
 				"Service plan name":     "abc2",
 				"Organization GUID":     "abc3",
@@ -146,7 +146,6 @@ func TestGenerateTags(t *testing.T) {
 			organizationGUID:    "abc3",
 			spaceGUID:           "abc4",
 			instanceGUID:        "abc5",
-			environment:         "",
 			tagManager: &CfTagManager{
 				broker: "AWS Broker",
 				cfNameResolver: &mockCFClientWrapper{
@@ -175,7 +174,6 @@ func TestGenerateTags(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			tags, err := test.tagManager.GenerateTags(
 				test.action,
-				test.environment,
 				test.serviceOfferingName,
 				test.servicePlanName,
 				test.organizationGUID,
@@ -228,7 +226,6 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			_, err := test.tagManager.GenerateTags(
 				Create,
-				"testing",
 				"abc1",
 				"abc2",
 				"abc3",

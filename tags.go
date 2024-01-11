@@ -21,7 +21,6 @@ const (
 type TagManager interface {
 	GenerateTags(
 		action Action,
-		environment string,
 		serviceName string,
 		servicePlanName string,
 		organizationGUID string,
@@ -32,11 +31,13 @@ type TagManager interface {
 
 type CfTagManager struct {
 	broker         string
+	environment    string
 	cfNameResolver NameResolver
 }
 
 func NewCFTagManager(
 	broker string,
+	environment string,
 	cfApiUrl string,
 	cfApiClientId string,
 	cfApiClientSecret string,
@@ -51,13 +52,13 @@ func NewCFTagManager(
 	}
 	return &CfTagManager{
 		broker,
+		environment,
 		cfNameResolver,
 	}, nil
 }
 
 func (t *CfTagManager) GenerateTags(
 	action Action,
-	environment string,
 	serviceName string,
 	planName string,
 	organizationGUID string,
@@ -74,8 +75,8 @@ func (t *CfTagManager) GenerateTags(
 		tags[BrokerTagKey] = t.broker
 	}
 
-	if environment != "" {
-		tags[EnvironmentTagKey] = strings.ToLower(environment)
+	if t.environment != "" {
+		tags[EnvironmentTagKey] = strings.ToLower(t.environment)
 	}
 
 	if serviceName != "" {
