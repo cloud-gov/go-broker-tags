@@ -46,6 +46,24 @@ func (s *mockSpaces) Get(ctx context.Context, guid string) (*resource.Space, err
 	}, nil
 }
 
+type mockServiceInstances struct {
+	getServiceInstanceErr error
+	instanceName          string
+	instanceGUID          string
+}
+
+func (si *mockServiceInstances) Get(ctx context.Context, guid string) (*resource.ServiceInstance, error) {
+	if si.getServiceInstanceErr != nil {
+		return nil, si.getServiceInstanceErr
+	}
+	if guid != si.instanceGUID {
+		return nil, fmt.Errorf("guid argument: %s does not match expected guid: %s", guid, si.instanceGUID)
+	}
+	return &resource.ServiceInstance{
+		Name: si.instanceName,
+	}, nil
+}
+
 func TestGetOrganization(t *testing.T) {
 	testCases := map[string]struct {
 		cfResourceGetter     *cfResourceGetter
@@ -59,7 +77,6 @@ func TestGetOrganization(t *testing.T) {
 					organizationName: "org-1",
 					organizationGuid: "guid-1",
 				},
-				Spaces: &mockSpaces{},
 			},
 			organizationGuid: "guid-1",
 			expectedOrganization: &resource.Organization{
@@ -71,7 +88,6 @@ func TestGetOrganization(t *testing.T) {
 				Organizations: &mockOrganizations{
 					getOrganizationErr: errors.New("error getting organization"),
 				},
-				Spaces: &mockSpaces{},
 			},
 			expectedErr: errors.New("error getting organization"),
 		},
@@ -100,7 +116,6 @@ func TestGetSpace(t *testing.T) {
 	}{
 		"success": {
 			cfResourceGetter: &cfResourceGetter{
-				Organizations: &mockOrganizations{},
 				Spaces: &mockSpaces{
 					spaceName: "space-1",
 					spaceGuid: "guid-1",
@@ -113,7 +128,6 @@ func TestGetSpace(t *testing.T) {
 		},
 		"error": {
 			cfResourceGetter: &cfResourceGetter{
-				Organizations: &mockOrganizations{},
 				Spaces: &mockSpaces{
 					getSpaceErr: errors.New("error getting space"),
 				},
@@ -127,6 +141,49 @@ func TestGetSpace(t *testing.T) {
 			space, err := test.cfResourceGetter.getSpace(test.spaceGuid)
 			if !cmp.Equal(space, test.expectedSpace) {
 				t.Errorf(cmp.Diff(space, test.expectedSpace))
+			}
+			if (test.expectedErr != nil && err == nil) ||
+				(err != nil && err.Error() != test.expectedErr.Error()) {
+				t.Fatalf("expected error: %s, got: %s", test.expectedErr, err)
+			}
+		})
+	}
+}
+
+func TestGetServiceInstance(t *testing.T) {
+	testCases := map[string]struct {
+		cfResourceGetter        *cfResourceGetter
+		expectedServiceInstance *resource.ServiceInstance
+		expectedErr             error
+		instanceGUID            string
+	}{
+		"success": {
+			cfResourceGetter: &cfResourceGetter{
+				ServiceInstances: &mockServiceInstances{
+					instanceName: "instance-1",
+					instanceGUID: "guid-1",
+				},
+			},
+			instanceGUID: "guid-1",
+			expectedServiceInstance: &resource.ServiceInstance{
+				Name: "instance-1",
+			},
+		},
+		"error": {
+			cfResourceGetter: &cfResourceGetter{
+				ServiceInstances: &mockServiceInstances{
+					getServiceInstanceErr: errors.New("error getting instance"),
+				},
+			},
+			expectedErr: errors.New("error getting instance"),
+		},
+	}
+
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			instance, err := test.cfResourceGetter.getServiceInstance(test.instanceGUID)
+			if !cmp.Equal(instance, test.expectedServiceInstance) {
+				t.Errorf(cmp.Diff(instance, test.expectedServiceInstance))
 			}
 			if (test.expectedErr != nil && err == nil) ||
 				(err != nil && err.Error() != test.expectedErr.Error()) {
