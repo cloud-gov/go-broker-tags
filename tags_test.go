@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/cloudfoundry-community/go-cfclient/v3/resource"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -35,6 +36,10 @@ func (m *mockCFClientWrapper) getSpaceName(spaceGUID string) (string, error) {
 		return "", errors.New("space GUID does not match expected value")
 	}
 	return m.spaceName, nil
+}
+
+func (m *mockCFClientWrapper) getServiceInstance(instanceGUID string) (*resource.ServiceInstance, error) {
+	return nil, nil
 }
 
 func TestGenerateTags(t *testing.T) {

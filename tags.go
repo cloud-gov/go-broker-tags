@@ -61,9 +61,9 @@ func (t *CfTagManager) GenerateTags(
 	action Action,
 	serviceName string,
 	planName string,
-	organizationGUID string,
-	spaceGUID string,
 	instanceGUID string,
+	spaceGUID string,
+	organizationGUID string,
 ) (map[string]string, error) {
 	tags := make(map[string]string)
 
@@ -87,14 +87,16 @@ func (t *CfTagManager) GenerateTags(
 		tags[ServicePlanName] = planName
 	}
 
-	if organizationGUID != "" {
-		tags[OrganizationGUIDTagKey] = organizationGUID
+	if instanceGUID != "" {
+		tags[ServiceInstanceGUIDTagKey] = instanceGUID
+	}
 
-		organizationName, err := t.cfNameResolver.getOrganizationName(organizationGUID)
+	if instanceGUID != "" && spaceGUID == "" {
+		instance, err := t.cfNameResolver.getServiceInstance(instanceGUID)
 		if err != nil {
 			return nil, err
 		}
-		tags[OrganizationNameTagKey] = organizationName
+		spaceGUID = instance.Relationships.Space.Data.GUID
 	}
 
 	if spaceGUID != "" {
@@ -107,8 +109,14 @@ func (t *CfTagManager) GenerateTags(
 		tags[SpaceNameTagKey] = spaceName
 	}
 
-	if instanceGUID != "" {
-		tags[ServiceInstanceGUIDTagKey] = instanceGUID
+	if organizationGUID != "" {
+		tags[OrganizationGUIDTagKey] = organizationGUID
+
+		organizationName, err := t.cfNameResolver.getOrganizationName(organizationGUID)
+		if err != nil {
+			return nil, err
+		}
+		tags[OrganizationNameTagKey] = organizationName
 	}
 
 	return tags, nil
