@@ -9,15 +9,17 @@ import (
 )
 
 type mockCFClientWrapper struct {
-	getOrganizationErr    error
-	organizationName      string
-	getSpaceErr           error
-	spaceName             string
-	getServiceInstanceErr error
-	instanceName          string
-	spaceGUID             string
-	organizationGUID      string
-	instanceGUID          string
+	getOrganizationErr          error
+	organizationName            string
+	getSpaceErr                 error
+	spaceName                   string
+	getServiceInstanceErr       error
+	instanceName                string
+	spaceGUID                   string
+	organizationGUID            string
+	instanceGUID                string
+	getServiceInstanceCallCount int
+	getSpaceInstanceCallCount   int
 }
 
 func (m *mockCFClientWrapper) getOrganization(organizationGUID string) (*resource.Organization, error) {
@@ -33,6 +35,7 @@ func (m *mockCFClientWrapper) getOrganization(organizationGUID string) (*resourc
 }
 
 func (m *mockCFClientWrapper) getSpace(spaceGUID string) (*resource.Space, error) {
+	m.getSpaceInstanceCallCount++
 	if m.getSpaceErr != nil {
 		return nil, m.getSpaceErr
 	}
@@ -52,6 +55,7 @@ func (m *mockCFClientWrapper) getSpace(spaceGUID string) (*resource.Space, error
 }
 
 func (m *mockCFClientWrapper) getServiceInstance(instanceGUID string) (*resource.ServiceInstance, error) {
+	m.getServiceInstanceCallCount++
 	if m.getServiceInstanceErr != nil {
 		return nil, m.getServiceInstanceErr
 	}
@@ -72,13 +76,15 @@ func (m *mockCFClientWrapper) getServiceInstance(instanceGUID string) (*resource
 
 func TestGenerateTags(t *testing.T) {
 	testCases := map[string]struct {
-		tagManager          *CfTagManager
-		expectedTags        map[string]string
-		action              Action
-		serviceOfferingName string
-		servicePlanName     string
-		resourceGUIDS       ResourceGUIDs
-		getMissingResources bool
+		tagManager                          *CfTagManager
+		expectedTags                        map[string]string
+		action                              Action
+		serviceOfferingName                 string
+		servicePlanName                     string
+		resourceGUIDS                       ResourceGUIDs
+		getMissingResources                 bool
+		expectedGetServiceInstanceCallCount int
+		expectedGetSpaceInstanceCallCount   int
 	}{
 		"Create": {
 			action:              Create,
@@ -100,6 +106,7 @@ func TestGenerateTags(t *testing.T) {
 					instanceGUID:     "abc5",
 				},
 			},
+			expectedGetSpaceInstanceCallCount: 1,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
 				"broker":                "AWS Broker",
@@ -133,6 +140,7 @@ func TestGenerateTags(t *testing.T) {
 					instanceGUID:     "abc5",
 				},
 			},
+			expectedGetSpaceInstanceCallCount: 1,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
 				"broker":                "AWS Broker",
@@ -165,6 +173,7 @@ func TestGenerateTags(t *testing.T) {
 					instanceGUID:     "abc5",
 				},
 			},
+			expectedGetSpaceInstanceCallCount: 1,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
 				"environment":           "testing",
@@ -196,6 +205,7 @@ func TestGenerateTags(t *testing.T) {
 					instanceGUID:     "abc5",
 				},
 			},
+			expectedGetSpaceInstanceCallCount: 1,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
 				"broker":                "AWS Broker",
@@ -228,6 +238,7 @@ func TestGenerateTags(t *testing.T) {
 					instanceGUID:     "abc5",
 				},
 			},
+			expectedGetSpaceInstanceCallCount: 1,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
 				"broker":                "AWS Broker",
@@ -260,6 +271,8 @@ func TestGenerateTags(t *testing.T) {
 					instanceGUID:     "abc5",
 				},
 			},
+			expectedGetSpaceInstanceCallCount:   1,
+			expectedGetServiceInstanceCallCount: 1,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
 				"broker":                "AWS Broker",
@@ -271,6 +284,61 @@ func TestGenerateTags(t *testing.T) {
 				"Instance GUID":         "abc5",
 				"Organization name":     "org-1",
 				"Space name":            "space-1",
+			},
+		},
+		"no organization GUID, do not get missing resource": {
+			action:              Create,
+			serviceOfferingName: "abc1",
+			servicePlanName:     "abc2",
+			resourceGUIDS: ResourceGUIDs{
+				spaceGUID:    "abc4",
+				instanceGUID: "abc5",
+			},
+			tagManager: &CfTagManager{
+				broker:      "AWS Broker",
+				environment: "testing",
+				cfResourceGetter: &mockCFClientWrapper{
+					spaceGUID:    "abc4",
+					spaceName:    "space-1",
+					instanceGUID: "abc5",
+				},
+			},
+			expectedGetSpaceInstanceCallCount:   1,
+			expectedGetServiceInstanceCallCount: 0,
+			expectedTags: map[string]string{
+				"client":                "Cloud Foundry",
+				"broker":                "AWS Broker",
+				"environment":           "testing",
+				"Service offering name": "abc1",
+				"Service plan name":     "abc2",
+				"Space GUID":            "abc4",
+				"Instance GUID":         "abc5",
+				"Space name":            "space-1",
+			},
+		},
+		"no space or organization GUID, do not get missing resource": {
+			action:              Create,
+			serviceOfferingName: "abc1",
+			servicePlanName:     "abc2",
+			resourceGUIDS: ResourceGUIDs{
+				instanceGUID: "abc5",
+			},
+			tagManager: &CfTagManager{
+				broker:      "AWS Broker",
+				environment: "testing",
+				cfResourceGetter: &mockCFClientWrapper{
+					instanceGUID: "abc5",
+				},
+			},
+			expectedGetSpaceInstanceCallCount:   0,
+			expectedGetServiceInstanceCallCount: 0,
+			expectedTags: map[string]string{
+				"client":                "Cloud Foundry",
+				"broker":                "AWS Broker",
+				"environment":           "testing",
+				"Service offering name": "abc1",
+				"Service plan name":     "abc2",
+				"Instance GUID":         "abc5",
 			},
 		},
 	}
@@ -297,6 +365,16 @@ func TestGenerateTags(t *testing.T) {
 
 			if !cmp.Equal(tags, test.expectedTags) {
 				t.Errorf(cmp.Diff(tags, test.expectedTags))
+			}
+
+			mockCfResourceGetter, ok := test.tagManager.cfResourceGetter.(*mockCFClientWrapper)
+			if ok {
+				if test.expectedGetServiceInstanceCallCount != mockCfResourceGetter.getServiceInstanceCallCount {
+					t.Fatalf("Expected %d calls to getServiceInstance, got %d", test.expectedGetServiceInstanceCallCount, mockCfResourceGetter.getServiceInstanceCallCount)
+				}
+				if test.expectedGetSpaceInstanceCallCount != mockCfResourceGetter.getSpaceInstanceCallCount {
+					t.Fatalf("Expected %d calls to getSpace, got %d", test.expectedGetSpaceInstanceCallCount, mockCfResourceGetter.getSpaceInstanceCallCount)
+				}
 			}
 		})
 	}
@@ -387,42 +465,40 @@ func TestGetSpaceGuid(t *testing.T) {
 	}
 }
 
-func TestGetOrganizationGuid(t *testing.T) {
+func TestGetOrganizationGuidFromSpace(t *testing.T) {
 	testCases := map[string]struct {
+		space        *resource.Space
 		tagManager   *CfTagManager
-		spaceGUID    string
-		expectedGuid string
-		expectedErr  error
+		expectedGUID string
 	}{
 		"success": {
 			tagManager: &CfTagManager{
-				cfResourceGetter: &mockCFClientWrapper{
-					organizationGUID: "org-1",
-					spaceGUID:        "space-1",
+				cfResourceGetter: &mockCFClientWrapper{},
+			},
+			space: &resource.Space{
+				Name: "space-1",
+				Relationships: &resource.SpaceRelationships{
+					Organization: &resource.ToOneRelationship{
+						Data: &resource.Relationship{
+							GUID: "org-guid-1",
+						},
+					},
 				},
 			},
-			spaceGUID:    "space-1",
-			expectedGuid: "org-1",
+			expectedGUID: "org-guid-1",
 		},
-		"error": {
+		"nil space": {
 			tagManager: &CfTagManager{
-				cfResourceGetter: &mockCFClientWrapper{
-					getSpaceErr: errors.New("error getting space"),
-				},
+				cfResourceGetter: &mockCFClientWrapper{},
 			},
-			expectedErr: errors.New("error getting space"),
 		},
 	}
 
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
-			organizationGUID, err := test.tagManager.getOrganizationGuid(test.spaceGUID)
-			if organizationGUID != test.expectedGuid {
-				t.Errorf("expected: %s, got: %s", test.expectedGuid, organizationGUID)
-			}
-			if (test.expectedErr != nil && err == nil) ||
-				(err != nil && err.Error() != test.expectedErr.Error()) {
-				t.Errorf("expected error: %s, got: %s", test.expectedErr, err)
+			organizationGUID := test.tagManager.getOrganizationGuidFromSpace(test.space)
+			if organizationGUID != test.expectedGUID {
+				t.Errorf("expected GUID: %s, got: %s", test.expectedGUID, organizationGUID)
 			}
 		})
 	}

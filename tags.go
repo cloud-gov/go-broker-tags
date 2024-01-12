@@ -3,6 +3,8 @@ package brokertags
 import (
 	"strings"
 	"time"
+
+	"github.com/cloudfoundry-community/go-cfclient/v3/resource"
 )
 
 const (
@@ -98,12 +100,14 @@ func (t *CfTagManager) GenerateTags(
 
 	var (
 		spaceGUID        string
+		space            *resource.Space
 		organizationGUID string
+		organization     *resource.Organization
 		err              error
 	)
 
 	spaceGUID = resourceGUIDs.spaceGUID
-	if spaceGUID == "" && resourceGUIDs.instanceGUID != "" && getMissingResources {
+	if spaceGUID == "" && getMissingResources {
 		spaceGUID, err = t.getSpaceGuid(resourceGUIDs.instanceGUID)
 		if err != nil {
 			return nil, err
@@ -112,29 +116,36 @@ func (t *CfTagManager) GenerateTags(
 
 	if spaceGUID != "" {
 		tags[SpaceGUIDTagKey] = spaceGUID
+	}
 
-		space, err := t.cfResourceGetter.getSpace(spaceGUID)
+	if spaceGUID != "" && space == nil {
+		space, err = t.cfResourceGetter.getSpace(spaceGUID)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if space != nil {
 		tags[SpaceNameTagKey] = space.Name
 	}
 
 	organizationGUID = resourceGUIDs.organizationGUID
-	if organizationGUID == "" && spaceGUID != "" && getMissingResources {
-		organizationGUID, err = t.getOrganizationGuid(spaceGUID)
+	if organizationGUID == "" && getMissingResources {
+		organizationGUID = t.getOrganizationGuidFromSpace(space)
+	}
+
+	if organizationGUID != "" {
+		tags[OrganizationGUIDTagKey] = organizationGUID
+	}
+
+	if organizationGUID != "" && organization == nil {
+		organization, err = t.cfResourceGetter.getOrganization(organizationGUID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if organizationGUID != "" {
-		tags[OrganizationGUIDTagKey] = organizationGUID
-
-		organization, err := t.cfResourceGetter.getOrganization(organizationGUID)
-		if err != nil {
-			return nil, err
-		}
+	if organization != nil {
 		tags[OrganizationNameTagKey] = organization.Name
 	}
 
@@ -150,11 +161,9 @@ func (t *CfTagManager) getSpaceGuid(instanceGUID string) (string, error) {
 	return spaceGUID, nil
 }
 
-func (t *CfTagManager) getOrganizationGuid(spaceGUID string) (string, error) {
-	space, err := t.cfResourceGetter.getSpace(spaceGUID)
-	if err != nil {
-		return "", err
+func (t *CfTagManager) getOrganizationGuidFromSpace(space *resource.Space) string {
+	if space == nil {
+		return ""
 	}
-	organizationGUID := space.Relationships.Organization.Data.GUID
-	return organizationGUID, nil
+	return space.Relationships.Organization.Data.GUID
 }
