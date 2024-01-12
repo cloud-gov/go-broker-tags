@@ -3,6 +3,8 @@ package brokertags
 import (
 	"strings"
 	"time"
+
+	"github.com/cloudfoundry-community/go-cfclient/v3/resource"
 )
 
 const (
@@ -21,27 +23,27 @@ const (
 type TagManager interface {
 	GenerateTags(
 		action Action,
-		environment string,
 		serviceName string,
 		servicePlanName string,
-		organizationGUID string,
-		spaceGUID string,
-		instanceGUID string,
+		resourceGUIDs ResourceGUIDs,
+		getMissingResources bool,
 	) (map[string]string, error)
 }
 
 type CfTagManager struct {
-	broker         string
-	cfNameResolver NameResolver
+	broker           string
+	environment      string
+	cfResourceGetter ResourceGetter
 }
 
 func NewCFTagManager(
 	broker string,
+	environment string,
 	cfApiUrl string,
 	cfApiClientId string,
 	cfApiClientSecret string,
 ) (*CfTagManager, error) {
-	cfNameResolver, err := newCFNameResolver(
+	cfResourceGetter, err := newCFResourceGetter(
 		cfApiUrl,
 		cfApiClientId,
 		cfApiClientSecret,
@@ -51,18 +53,23 @@ func NewCFTagManager(
 	}
 	return &CfTagManager{
 		broker,
-		cfNameResolver,
+		environment,
+		cfResourceGetter,
 	}, nil
+}
+
+type ResourceGUIDs struct {
+	InstanceGUID     string
+	SpaceGUID        string
+	OrganizationGUID string
 }
 
 func (t *CfTagManager) GenerateTags(
 	action Action,
-	environment string,
 	serviceName string,
 	planName string,
-	organizationGUID string,
-	spaceGUID string,
-	instanceGUID string,
+	resourceGUIDs ResourceGUIDs,
+	getMissingResources bool,
 ) (map[string]string, error) {
 	tags := make(map[string]string)
 
@@ -74,8 +81,8 @@ func (t *CfTagManager) GenerateTags(
 		tags[BrokerTagKey] = t.broker
 	}
 
-	if environment != "" {
-		tags[EnvironmentTagKey] = strings.ToLower(environment)
+	if t.environment != "" {
+		tags[EnvironmentTagKey] = strings.ToLower(t.environment)
 	}
 
 	if serviceName != "" {
@@ -86,29 +93,76 @@ func (t *CfTagManager) GenerateTags(
 		tags[ServicePlanName] = planName
 	}
 
-	if organizationGUID != "" {
-		tags[OrganizationGUIDTagKey] = organizationGUID
+	if resourceGUIDs.InstanceGUID != "" {
+		tags[ServiceInstanceGUIDTagKey] = resourceGUIDs.InstanceGUID
+	}
 
-		organizationName, err := t.cfNameResolver.getOrganizationName(organizationGUID)
+	var (
+		spaceGUID        string
+		space            *resource.Space
+		organizationGUID string
+		organization     *resource.Organization
+		err              error
+	)
+
+	spaceGUID = resourceGUIDs.SpaceGUID
+	if spaceGUID == "" && getMissingResources {
+		spaceGUID, err = t.getSpaceGuid(resourceGUIDs.InstanceGUID)
 		if err != nil {
 			return nil, err
 		}
-		tags[OrganizationNameTagKey] = organizationName
 	}
 
 	if spaceGUID != "" {
 		tags[SpaceGUIDTagKey] = spaceGUID
+	}
 
-		spaceName, err := t.cfNameResolver.getSpaceName(spaceGUID)
+	if spaceGUID != "" && space == nil {
+		space, err = t.cfResourceGetter.getSpace(spaceGUID)
 		if err != nil {
 			return nil, err
 		}
-		tags[SpaceNameTagKey] = spaceName
 	}
 
-	if instanceGUID != "" {
-		tags[ServiceInstanceGUIDTagKey] = instanceGUID
+	if space != nil {
+		tags[SpaceNameTagKey] = space.Name
+	}
+
+	organizationGUID = resourceGUIDs.OrganizationGUID
+	if organizationGUID == "" && getMissingResources {
+		organizationGUID = t.getOrganizationGuidFromSpace(space)
+	}
+
+	if organizationGUID != "" {
+		tags[OrganizationGUIDTagKey] = organizationGUID
+	}
+
+	if organizationGUID != "" && organization == nil {
+		organization, err = t.cfResourceGetter.getOrganization(organizationGUID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if organization != nil {
+		tags[OrganizationNameTagKey] = organization.Name
 	}
 
 	return tags, nil
+}
+
+func (t *CfTagManager) getSpaceGuid(instanceGUID string) (string, error) {
+	instance, err := t.cfResourceGetter.getServiceInstance(instanceGUID)
+	if err != nil {
+		return "", err
+	}
+	spaceGUID := instance.Relationships.Space.Data.GUID
+	return spaceGUID, nil
+}
+
+func (t *CfTagManager) getOrganizationGuidFromSpace(space *resource.Space) string {
+	if space == nil {
+		return ""
+	}
+	return space.Relationships.Organization.Data.GUID
 }
