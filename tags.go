@@ -25,9 +25,8 @@ type TagManager interface {
 		action Action,
 		serviceName string,
 		servicePlanName string,
-		organizationGUID string,
-		spaceGUID string,
-		instanceGUID string,
+		resourceGUIDs ResourceGUIDs,
+		getMissingResources bool,
 	) (map[string]string, error)
 }
 
