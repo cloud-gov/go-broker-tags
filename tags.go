@@ -59,9 +59,9 @@ func NewCFTagManager(
 }
 
 type ResourceGUIDs struct {
-	instanceGUID     string
-	spaceGUID        string
-	organizationGUID string
+	InstanceGUID     string
+	SpaceGUID        string
+	OrganizationGUID string
 }
 
 func (t *CfTagManager) GenerateTags(
@@ -93,8 +93,8 @@ func (t *CfTagManager) GenerateTags(
 		tags[ServicePlanName] = planName
 	}
 
-	if resourceGUIDs.instanceGUID != "" {
-		tags[ServiceInstanceGUIDTagKey] = resourceGUIDs.instanceGUID
+	if resourceGUIDs.InstanceGUID != "" {
+		tags[ServiceInstanceGUIDTagKey] = resourceGUIDs.InstanceGUID
 	}
 
 	var (
@@ -105,9 +105,9 @@ func (t *CfTagManager) GenerateTags(
 		err              error
 	)
 
-	spaceGUID = resourceGUIDs.spaceGUID
+	spaceGUID = resourceGUIDs.SpaceGUID
 	if spaceGUID == "" && getMissingResources {
-		spaceGUID, err = t.getSpaceGuid(resourceGUIDs.instanceGUID)
+		spaceGUID, err = t.getSpaceGuid(resourceGUIDs.InstanceGUID)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +128,7 @@ func (t *CfTagManager) GenerateTags(
 		tags[SpaceNameTagKey] = space.Name
 	}
 
-	organizationGUID = resourceGUIDs.organizationGUID
+	organizationGUID = resourceGUIDs.OrganizationGUID
 	if organizationGUID == "" && getMissingResources {
 		organizationGUID = t.getOrganizationGuidFromSpace(space)
 	}

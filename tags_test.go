@@ -91,9 +91,9 @@ func TestGenerateTags(t *testing.T) {
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
 			resourceGUIDS: ResourceGUIDs{
-				organizationGUID: "abc3",
-				spaceGUID:        "abc4",
-				instanceGUID:     "abc5",
+				OrganizationGUID: "abc3",
+				SpaceGUID:        "abc4",
+				InstanceGUID:     "abc5",
 			},
 			tagManager: &CfTagManager{
 				broker:      "AWS Broker",
@@ -125,9 +125,9 @@ func TestGenerateTags(t *testing.T) {
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
 			resourceGUIDS: ResourceGUIDs{
-				organizationGUID: "abc3",
-				spaceGUID:        "abc4",
-				instanceGUID:     "abc5",
+				OrganizationGUID: "abc3",
+				SpaceGUID:        "abc4",
+				InstanceGUID:     "abc5",
 			},
 			tagManager: &CfTagManager{
 				broker:      "AWS Broker",
@@ -159,9 +159,9 @@ func TestGenerateTags(t *testing.T) {
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
 			resourceGUIDS: ResourceGUIDs{
-				organizationGUID: "abc3",
-				spaceGUID:        "abc4",
-				instanceGUID:     "abc5",
+				OrganizationGUID: "abc3",
+				SpaceGUID:        "abc4",
+				InstanceGUID:     "abc5",
 			},
 			tagManager: &CfTagManager{
 				environment: "testing",
@@ -191,9 +191,9 @@ func TestGenerateTags(t *testing.T) {
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
 			resourceGUIDS: ResourceGUIDs{
-				organizationGUID: "abc3",
-				spaceGUID:        "abc4",
-				instanceGUID:     "abc5",
+				OrganizationGUID: "abc3",
+				SpaceGUID:        "abc4",
+				InstanceGUID:     "abc5",
 			},
 			tagManager: &CfTagManager{
 				broker: "AWS Broker",
@@ -223,8 +223,8 @@ func TestGenerateTags(t *testing.T) {
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
 			resourceGUIDS: ResourceGUIDs{
-				spaceGUID:    "abc4",
-				instanceGUID: "abc5",
+				SpaceGUID:    "abc4",
+				InstanceGUID: "abc5",
 			},
 			getMissingResources: true,
 			tagManager: &CfTagManager{
@@ -257,7 +257,7 @@ func TestGenerateTags(t *testing.T) {
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
 			resourceGUIDS: ResourceGUIDs{
-				instanceGUID: "abc5",
+				InstanceGUID: "abc5",
 			},
 			getMissingResources: true,
 			tagManager: &CfTagManager{
@@ -291,8 +291,8 @@ func TestGenerateTags(t *testing.T) {
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
 			resourceGUIDS: ResourceGUIDs{
-				spaceGUID:    "abc4",
-				instanceGUID: "abc5",
+				SpaceGUID:    "abc4",
+				InstanceGUID: "abc5",
 			},
 			tagManager: &CfTagManager{
 				broker:      "AWS Broker",
@@ -321,7 +321,7 @@ func TestGenerateTags(t *testing.T) {
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
 			resourceGUIDS: ResourceGUIDs{
-				instanceGUID: "abc5",
+				InstanceGUID: "abc5",
 			},
 			tagManager: &CfTagManager{
 				broker:      "AWS Broker",
@@ -411,9 +411,9 @@ func TestGenerateTagsHandleErrors(t *testing.T) {
 				"abc1",
 				"abc2",
 				ResourceGUIDs{
-					organizationGUID: "org-1",
-					instanceGUID:     "instance-1",
-					spaceGUID:        "space-1",
+					OrganizationGUID: "org-1",
+					InstanceGUID:     "instance-1",
+					SpaceGUID:        "space-1",
 				},
 				false,
 			)
