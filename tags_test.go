@@ -351,6 +351,7 @@ func TestGetSpaceGuid(t *testing.T) {
 		tagManager   *CfTagManager
 		instanceGUID string
 		expectedGuid string
+		expectedErr  error
 	}{
 		"success": {
 			tagManager: &CfTagManager{
@@ -362,13 +363,25 @@ func TestGetSpaceGuid(t *testing.T) {
 			instanceGUID: "instance-1",
 			expectedGuid: "space-1",
 		},
+		"error": {
+			tagManager: &CfTagManager{
+				cfResourceGetter: &mockCFClientWrapper{
+					getServiceInstanceErr: errors.New("error getting service instance"),
+				},
+			},
+			expectedErr: errors.New("error getting service instance"),
+		},
 	}
 
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
-			spaceGUID, _ := test.tagManager.getSpaceGuid(test.instanceGUID)
+			spaceGUID, err := test.tagManager.getSpaceGuid(test.instanceGUID)
 			if spaceGUID != test.expectedGuid {
-				t.Fatal("fail")
+				t.Errorf("expected: %s, got: %s", test.expectedGuid, spaceGUID)
+			}
+			if (test.expectedErr != nil && err == nil) ||
+				(err != nil && err.Error() != test.expectedErr.Error()) {
+				t.Errorf("expected error: %s, got: %s", test.expectedErr, err)
 			}
 		})
 	}
@@ -379,6 +392,7 @@ func TestGetOrganizationGuid(t *testing.T) {
 		tagManager   *CfTagManager
 		spaceGUID    string
 		expectedGuid string
+		expectedErr  error
 	}{
 		"success": {
 			tagManager: &CfTagManager{
@@ -390,13 +404,25 @@ func TestGetOrganizationGuid(t *testing.T) {
 			spaceGUID:    "space-1",
 			expectedGuid: "org-1",
 		},
+		"error": {
+			tagManager: &CfTagManager{
+				cfResourceGetter: &mockCFClientWrapper{
+					getSpaceErr: errors.New("error getting space"),
+				},
+			},
+			expectedErr: errors.New("error getting space"),
+		},
 	}
 
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
-			spaceGUID, _ := test.tagManager.getOrganizationGuid(test.spaceGUID)
-			if spaceGUID != test.expectedGuid {
-				t.Fatal("fail")
+			organizationGUID, err := test.tagManager.getOrganizationGuid(test.spaceGUID)
+			if organizationGUID != test.expectedGuid {
+				t.Errorf("expected: %s, got: %s", test.expectedGuid, organizationGUID)
+			}
+			if (test.expectedErr != nil && err == nil) ||
+				(err != nil && err.Error() != test.expectedErr.Error()) {
+				t.Errorf("expected error: %s, got: %s", test.expectedErr, err)
 			}
 		})
 	}
