@@ -107,7 +107,9 @@ func (t *CfTagManager) GenerateTags(
 	instanceGUID = resourceGUIDs.InstanceGUID
 	if instanceGUID != "" {
 		tags[ServiceInstanceGUIDTagKey] = instanceGUID
+	}
 
+	if instanceGUID != "" && action == Update {
 		instance, err = t.cfResourceGetter.getServiceInstance(instanceGUID)
 		if err != nil {
 			return nil, err
@@ -121,6 +123,11 @@ func (t *CfTagManager) GenerateTags(
 	spaceGUID = resourceGUIDs.SpaceGUID
 	if spaceGUID == "" && instance != nil {
 		spaceGUID = instance.Relationships.Space.Data.GUID
+	} else if spaceGUID == "" && instanceGUID != "" {
+		spaceGUID, err = t.getSpaceGuid(resourceGUIDs.InstanceGUID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if spaceGUID != "" {
@@ -153,6 +160,15 @@ func (t *CfTagManager) GenerateTags(
 	}
 
 	return tags, nil
+}
+
+func (t *CfTagManager) getSpaceGuid(instanceGUID string) (string, error) {
+	instance, err := t.cfResourceGetter.getServiceInstance(instanceGUID)
+	if err != nil {
+		return "", err
+	}
+	spaceGUID := instance.Relationships.Space.Data.GUID
+	return spaceGUID, nil
 }
 
 func (t *CfTagManager) getOrganizationGuidFromSpace(space *resource.Space) string {

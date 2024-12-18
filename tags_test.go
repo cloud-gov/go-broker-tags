@@ -107,7 +107,7 @@ func TestGenerateTags(t *testing.T) {
 					instanceName:     "abc6",
 				},
 			},
-			expectedGetServiceInstanceCallCount: 1,
+			expectedGetServiceInstanceCallCount: 0,
 			expectedGetSpaceInstanceCallCount:   1,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
@@ -118,7 +118,6 @@ func TestGenerateTags(t *testing.T) {
 				"Organization GUID":     "abc3",
 				"Space GUID":            "abc4",
 				"Instance GUID":         "abc5",
-				"Instance name":         "abc6",
 				"Organization name":     "org-1",
 				"Space name":            "space-1",
 			},
@@ -160,7 +159,7 @@ func TestGenerateTags(t *testing.T) {
 				"Space name":            "space-1",
 			},
 		},
-		"no broker name": {
+		"create - no broker name": {
 			action:              Create,
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
@@ -180,7 +179,7 @@ func TestGenerateTags(t *testing.T) {
 					instanceName:     "abc6",
 				},
 			},
-			expectedGetServiceInstanceCallCount: 1,
+			expectedGetServiceInstanceCallCount: 0,
 			expectedGetSpaceInstanceCallCount:   1,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
@@ -190,12 +189,11 @@ func TestGenerateTags(t *testing.T) {
 				"Organization GUID":     "abc3",
 				"Space GUID":            "abc4",
 				"Instance GUID":         "abc5",
-				"Instance name":         "abc6",
 				"Organization name":     "org-1",
 				"Space name":            "space-1",
 			},
 		},
-		"no environment tag": {
+		"create - no environment tag": {
 			action:              Create,
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
@@ -215,7 +213,7 @@ func TestGenerateTags(t *testing.T) {
 					instanceName:     "abc6",
 				},
 			},
-			expectedGetServiceInstanceCallCount: 1,
+			expectedGetServiceInstanceCallCount: 0,
 			expectedGetSpaceInstanceCallCount:   1,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
@@ -225,12 +223,11 @@ func TestGenerateTags(t *testing.T) {
 				"Organization GUID":     "abc3",
 				"Space GUID":            "abc4",
 				"Instance GUID":         "abc5",
-				"Instance name":         "abc6",
 				"Organization name":     "org-1",
 				"Space name":            "space-1",
 			},
 		},
-		"get missing organization": {
+		"create - get missing organization": {
 			action:              Create,
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
@@ -251,7 +248,7 @@ func TestGenerateTags(t *testing.T) {
 					instanceName:     "abc6",
 				},
 			},
-			expectedGetServiceInstanceCallCount: 1,
+			expectedGetServiceInstanceCallCount: 0,
 			expectedGetSpaceInstanceCallCount:   1,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
@@ -262,13 +259,47 @@ func TestGenerateTags(t *testing.T) {
 				"Organization GUID":     "abc3",
 				"Space GUID":            "abc4",
 				"Instance GUID":         "abc5",
-				"Instance name":         "abc6",
 				"Organization name":     "org-1",
 				"Space name":            "space-1",
 			},
 		},
-		"get missing space and organization": {
+		"create - get missing space and organization": {
 			action:              Create,
+			serviceOfferingName: "abc1",
+			servicePlanName:     "abc2",
+			resourceGUIDS: ResourceGUIDs{
+				InstanceGUID: "abc5",
+			},
+			getMissingResources: true,
+			tagManager: &CfTagManager{
+				broker:      "AWS Broker",
+				environment: "testing",
+				cfResourceGetter: &mockCFClientWrapper{
+					spaceGUID:        "abc4",
+					organizationGUID: "abc3",
+					organizationName: "org-1",
+					spaceName:        "space-1",
+					instanceGUID:     "abc5",
+					instanceName:     "abc6",
+				},
+			},
+			expectedGetSpaceInstanceCallCount:   1,
+			expectedGetServiceInstanceCallCount: 1,
+			expectedTags: map[string]string{
+				"client":                "Cloud Foundry",
+				"broker":                "AWS Broker",
+				"environment":           "testing",
+				"Service offering name": "abc1",
+				"Service plan name":     "abc2",
+				"Organization GUID":     "abc3",
+				"Space GUID":            "abc4",
+				"Instance GUID":         "abc5",
+				"Organization name":     "org-1",
+				"Space name":            "space-1",
+			},
+		},
+		"update - get missing space and organization": {
+			action:              Update,
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
 			resourceGUIDS: ResourceGUIDs{
@@ -303,7 +334,7 @@ func TestGenerateTags(t *testing.T) {
 				"Space name":            "space-1",
 			},
 		},
-		"no organization GUID, do not get missing resource": {
+		"create - no organization GUID, do not get missing resource": {
 			action:              Create,
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
@@ -322,7 +353,7 @@ func TestGenerateTags(t *testing.T) {
 				},
 			},
 			expectedGetSpaceInstanceCallCount:   1,
-			expectedGetServiceInstanceCallCount: 1,
+			expectedGetServiceInstanceCallCount: 0,
 			expectedTags: map[string]string{
 				"client":                "Cloud Foundry",
 				"broker":                "AWS Broker",
@@ -331,11 +362,10 @@ func TestGenerateTags(t *testing.T) {
 				"Service plan name":     "abc2",
 				"Space GUID":            "abc4",
 				"Instance GUID":         "abc5",
-				"Instance name":         "abc6",
 				"Space name":            "space-1",
 			},
 		},
-		"no space or organization GUID, do not get missing resource": {
+		"create - no space or organization GUID, do not get missing resource": {
 			action:              Create,
 			serviceOfferingName: "abc1",
 			servicePlanName:     "abc2",
@@ -359,7 +389,6 @@ func TestGenerateTags(t *testing.T) {
 				"Service offering name": "abc1",
 				"Service plan name":     "abc2",
 				"Instance GUID":         "abc5",
-				"Instance name":         "abc6",
 			},
 		},
 	}
