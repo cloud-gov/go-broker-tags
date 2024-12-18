@@ -14,6 +14,7 @@ const (
 	OrganizationGUIDTagKey    = "Organization GUID"
 	OrganizationNameTagKey    = "Organization name"
 	ServiceInstanceGUIDTagKey = "Instance GUID"
+	ServiceInstanceNameTagKey = "Instance name"
 	ServiceNameTagKey         = "Service offering name"
 	ServicePlanName           = "Service plan name"
 	SpaceGUIDTagKey           = "Space GUID"
@@ -93,11 +94,9 @@ func (t *CfTagManager) GenerateTags(
 		tags[ServicePlanName] = planName
 	}
 
-	if resourceGUIDs.InstanceGUID != "" {
-		tags[ServiceInstanceGUIDTagKey] = resourceGUIDs.InstanceGUID
-	}
-
 	var (
+		instanceGUID     string
+		instance         *resource.ServiceInstance
 		spaceGUID        string
 		space            *resource.Space
 		organizationGUID string
@@ -105,19 +104,27 @@ func (t *CfTagManager) GenerateTags(
 		err              error
 	)
 
-	spaceGUID = resourceGUIDs.SpaceGUID
-	if spaceGUID == "" && getMissingResources {
-		spaceGUID, err = t.getSpaceGuid(resourceGUIDs.InstanceGUID)
+	instanceGUID = resourceGUIDs.InstanceGUID
+	if instanceGUID != "" {
+		tags[ServiceInstanceGUIDTagKey] = instanceGUID
+
+		instance, err = t.cfResourceGetter.getServiceInstance(instanceGUID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if spaceGUID != "" {
-		tags[SpaceGUIDTagKey] = spaceGUID
+	if instance != nil {
+		tags[ServiceInstanceNameTagKey] = instance.Name
 	}
 
-	if spaceGUID != "" && space == nil {
+	spaceGUID = resourceGUIDs.SpaceGUID
+	if spaceGUID == "" && instance != nil {
+		spaceGUID = instance.Relationships.Space.Data.GUID
+	}
+
+	if spaceGUID != "" {
+		tags[SpaceGUIDTagKey] = spaceGUID
 		space, err = t.cfResourceGetter.getSpace(spaceGUID)
 		if err != nil {
 			return nil, err
@@ -135,9 +142,6 @@ func (t *CfTagManager) GenerateTags(
 
 	if organizationGUID != "" {
 		tags[OrganizationGUIDTagKey] = organizationGUID
-	}
-
-	if organizationGUID != "" && organization == nil {
 		organization, err = t.cfResourceGetter.getOrganization(organizationGUID)
 		if err != nil {
 			return nil, err
@@ -149,15 +153,6 @@ func (t *CfTagManager) GenerateTags(
 	}
 
 	return tags, nil
-}
-
-func (t *CfTagManager) getSpaceGuid(instanceGUID string) (string, error) {
-	instance, err := t.cfResourceGetter.getServiceInstance(instanceGUID)
-	if err != nil {
-		return "", err
-	}
-	spaceGUID := instance.Relationships.Space.Data.GUID
-	return spaceGUID, nil
 }
 
 func (t *CfTagManager) getOrganizationGuidFromSpace(space *resource.Space) string {
