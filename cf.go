@@ -3,9 +3,9 @@ package brokertags
 import (
 	"context"
 
-	"github.com/cloudfoundry-community/go-cfclient/v3/client"
-	"github.com/cloudfoundry-community/go-cfclient/v3/config"
-	"github.com/cloudfoundry-community/go-cfclient/v3/resource"
+	"github.com/cloudfoundry/go-cfclient/v3/client"
+	"github.com/cloudfoundry/go-cfclient/v3/config"
+	"github.com/cloudfoundry/go-cfclient/v3/resource"
 )
 
 type ResourceGetter interface {
@@ -37,11 +37,7 @@ func newCFResourceGetter(
 	cfApiClientId string,
 	cfApiClientSecret string,
 ) (*cfResourceGetter, error) {
-	cfg, err := config.NewClientSecret(
-		cfApiUrl,
-		cfApiClientId,
-		cfApiClientSecret,
-	)
+	cfg, err := config.New(cfApiUrl, config.ClientCredentials(cfApiClientId, cfApiClientSecret))
 	if err != nil {
 		return nil, err
 	}
